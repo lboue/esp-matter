@@ -26,6 +26,8 @@
 #include <app/server/CommissioningWindowManager.h>
 #include <app/server/Server.h>
 
+#include <app/clusters/electrical-energy-measurement-server/electrical-energy-measurement-server.h>
+
 #define CREATE_PLUG(node, plug_id) \
     struct gpio_plug plug##plug_id; \
     plug##plug_id.GPIO_PIN_VALUE = (gpio_num_t) CONFIG_GPIO_PLUG_##plug_id; \
@@ -50,6 +52,8 @@ extern const char decryption_key_end[] asm("_binary_esp_image_encryption_key_pem
 static const char *s_decryption_key = decryption_key_start;
 static const uint16_t s_decryption_key_len = decryption_key_end - decryption_key_start;
 #endif // CONFIG_ENABLE_ENCRYPTED_OTA
+
+chip::app::Clusters::ElectricalEnergyMeasurement::ElectricalEnergyMeasurementAttrAccess* energyMeasurementAccess;
 
 static void app_event_cb(const ChipDeviceEvent *event, intptr_t arg)
 {
