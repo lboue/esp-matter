@@ -197,6 +197,28 @@ static esp_err_t create_plug(gpio_plug* plug, node_t* node)
         ESP_LOGE(TAG, "Failed to initialize plug");
     }
 
+   // CUSTOM
+   electrical_sensor::config_t electrical_sensor_config;
+   endpoint_t *electrical_endpoint = electrical_sensor::create(node, &electrical_sensor_config, ENDPOINT_FLAG_NONE, electrical_sensor_handle);
+   if (electrical_endpoint)
+   {
+   electrical_endpoint_id = endpoint::get_id(electrical_endpoint);
+   ESP_LOGI(TAG, "ElectricalSensor Endpoint: %d", electrical_endpoint_id);
+   }
+
+   // measurement_power_config
+   cluster::electrical_power_measurement::config_t power_measurement_config;
+   auto esp_matter::cluster_t *epower_cluster = cluster::electrical_power_measurement::create(electrical_endpoint, &power_measurement_config, CLUSTER_FLAG_SERVER, cluster::electrical_power_measurement::feature::alternating_current::get_id());
+
+   // energy_measurement_config
+   esp_matter::cluster::electrical_energy_measurement::config_t energy_measurement_config;
+   // features
+   auto cumulative_energy_feature = esp_matter::cluster::electrical_energy_measurement::feature::cumulative_energy::get_id();
+   auto imported_energy_feature = esp_matter::cluster::electrical_energy_measurement::feature::imported_energy::get_id();
+   
+   // Create electrical_energy_measurement cluster
+   auto relay_energy_measurement_cluster = esp_matter::cluster::electrical_energy_measurement::create(electrical_endpoint_id, &energy_measurement_config, esp_matter::CLUSTER_FLAG_SERVER, cumulative_energy_feature | imported_energy_feature);
+
     // Check for maximum plugs that can be configured.
     if (configure_plugs < CONFIG_NUM_VIRTUAL_PLUGS) {
         plugin_unit_list[configure_plugs].plug = plug->GPIO_PIN_VALUE;
