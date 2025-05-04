@@ -217,15 +217,14 @@ extern "C" void app_main()
     int energy_value = 10000;
     int endpoint_id = 1;
     chip::app::Clusters::ElectricalEnergyMeasurement::Structs::EnergyMeasurementStruct::Type measurement;
-    measurement.startTimestamp.SetValue(1746386384-3600); // Change to your marked start EPOCH time of energy
+    measurement.startTimestamp.SetValue(1746380384); // Change to your marked start EPOCH time of energy
     measurement.endTimestamp.SetValue(1746386384); // Change to your own API to get EPOCH time (Or use systime APIs)
     measurement.energy = energy_value;
     
     chip::DeviceLayer::StackLock lock;
-    auto success = chip::app::Clusters::ElectricalEnergyMeasurement::NotifyCumulativeEnergyMeasured(endpoint_id, {}, chip::Optional<chip::app::Clusters::ElectricalEnergyMeasurement::Structs::EnergyMeasurementStruct::Type> (measurement));
-    ESP_LOGI(TAG, "NotifyCumulativeEnergyMeasured() -> %u", success);
-
-    //chip::app::Clusters::TemperatureControl::SetInstance(&sAppSupportedTemperatureLevelsDelegate);
+    auto success = chip::app::Clusters::ElectricalEnergyMeasurement::NotifyCumulativeEnergyMeasured(solar_power_endpoint_id, {},
+                   chip::Optional<chip::app::Clusters::ElectricalEnergyMeasurement::Structs::EnergyMeasurementStruct::Type> (measurement));
+    ESP_LOGI(TAG, "NotifyCumulativeEnergyMeasured()");
 
 #if CONFIG_ENABLE_CHIP_SHELL
     esp_matter::console::diagnostics_register_commands();
