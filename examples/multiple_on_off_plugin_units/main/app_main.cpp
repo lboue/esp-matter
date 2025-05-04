@@ -219,13 +219,13 @@ static esp_err_t create_plug(gpio_plug* plug, node_t* node)
     electrical_power_measurement::config_t measurement_power_config;
     esp_matter::cluster_t *epower_cluster = electrical_power_measurement::create(electrical_sensor_endpoint, &(electrical_sensor_config.electrical_power_measurement), CLUSTER_FLAG_SERVER,
                             electrical_power_measurement::feature::alternating_current::get_id());
-    int64_t voltage = 230 * 1000; // mV
-    int64_t active_power = 50 * 1000; // mW
     int64_t active_current = 1 * 1000; // mA
-    int measurement_types = 3;
-    cluster::electrical_power_measurement::attribute::create_voltage(epower_cluster, voltage);
-    cluster::electrical_power_measurement::attribute::create_active_power(epower_cluster, active_power);
+    int64_t active_power = 50 * 1000; // mW
+    int64_t voltage = 230 * 1000; // mV
+    uint8_t measurement_types = 3;
     cluster::electrical_power_measurement::attribute::create_active_current(epower_cluster, active_current);
+    cluster::electrical_power_measurement::attribute::create_active_power(epower_cluster, active_power);
+    cluster::electrical_power_measurement::attribute::create_voltage(epower_cluster, voltage);
     cluster::electrical_power_measurement::attribute::create_number_of_measurement_types(epower_cluster, measurement_types);
 
     /* EEM */
@@ -247,9 +247,10 @@ static esp_err_t create_plug(gpio_plug* plug, node_t* node)
 		ESP_LOGE(TAG, "energyMeasurementAccess->Init() ERR");
 	}
 	
-    int max_energy = 10000;
+    int max_energy = 187650443764698;
 	chip::app::Clusters::ElectricalEnergyMeasurement::Structs::MeasurementAccuracyStruct::Type measurementAccuracy;
-	chip::app::Clusters::ElectricalEnergyMeasurement::Structs::MeasurementAccuracyRangeStruct::Type measurementAccuracyRange;
+	static chip::app::Clusters::ElectricalEnergyMeasurement::Structs::MeasurementAccuracyRangeStruct::Type measurementAccuracyRange;
+
 	measurementAccuracy.measured = true;
 	measurementAccuracy.measurementType = chip::app::Clusters::detail::MeasurementTypeEnum::kElectricalEnergy;
 	measurementAccuracy.maxMeasuredValue = max_energy;
@@ -368,6 +369,8 @@ extern "C" void app_main()
     /* Matter start */
     err = esp_matter::start(app_event_cb);
     ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to start Matter, err:%d", err));
+
+
 
 #if CONFIG_ENABLE_CHIP_SHELL
     esp_matter::console::diagnostics_register_commands();
