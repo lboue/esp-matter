@@ -128,16 +128,15 @@ extern "C" void app_main()
 
     err = set_parent_endpoint(endpoint1, endpoint);
     ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to set parent endpoint, err:%d", err));
-    add device types to your main SolarPower EP:
 
     /* add device_energy_management device type to main EP */
-    add_device_type(endpoint, cluster::device_energy_management.get_device_type_id(), cluster::device_energy_management.get_device_type_version());
+    add_device_type(endpoint, cluster::device_energy_management::get_device_type_id, cluster::device_energy_management::get_device_type_version);
 
     /* add electrical_sensor device type to main EP */
-    add_device_type(endpoint, cluster::electrical_sensor.get_device_type_id(), cluster::electrical_sensor.get_device_type_version());
+    add_device_type(endpoint, cluster::electrical_sensor::get_device_type_id, cluster::electrical_sensor::get_device_type_version);
 
     /* add power_source device type to main EP */
-    add_device_type(endpoint, cluster::power_source.get_device_type_id, cluster::power_source.get_device_type_version());
+    add_device_type(endpoint, cluster::power_source_device::get_device_type_id, cluster::power_source_device::get_device_type_version);
 
 #if CHIP_DEVICE_CONFIG_ENABLE_THREAD
     /* Set OpenThread platform config */
