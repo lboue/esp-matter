@@ -216,6 +216,11 @@ extern "C" void app_main()
 
     int energy_value = 10000;
     int endpoint_id = 1;
+
+    /* 
+        https://github.com/project-chip/connectedhomeip/blob/master/src/app/clusters/electrical-energy-measurement-server/electrical-energy-measurement-server.h
+        https://github.com/project-chip/connectedhomeip/blob/master/examples/dishwasher-app/silabs/src/ElectricalEnergyMeasurementInstance.cpp
+    */
     chip::app::Clusters::ElectricalEnergyMeasurement::Structs::EnergyMeasurementStruct::Type measurement;
     measurement.startTimestamp.SetValue(1746380384); // Change to your marked start EPOCH time of energy
     measurement.endTimestamp.SetValue(1746386384); // Change to your own API to get EPOCH time (Or use systime APIs)
