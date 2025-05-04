@@ -23,6 +23,7 @@
 #include <platform/ESP32/OpenthreadLauncher.h>
 #endif
 
+#include <app/clusters/electrical-energy-measurement-server/electrical-energy-measurement-server.h>
 #include <app/server/CommissioningWindowManager.h>
 #include <app/server/Server.h>
 
@@ -43,6 +44,7 @@ constexpr auto k_timeout_seconds = 300;
 uint16_t configure_plugs = 0;
 plugin_endpoint plugin_unit_list[CONFIG_NUM_VIRTUAL_PLUGS];
 static gpio_num_t reset_gpio = gpio_num_t::GPIO_NUM_NC;
+chip::app::Clusters::ElectricalEnergyMeasurement::ElectricalEnergyMeasurementAttrAccess* energyMeasurementAccess;
 
 #if CONFIG_ENABLE_ENCRYPTED_OTA
 extern const char decryption_key_start[] asm("_binary_esp_image_encryption_key_pem_start");
@@ -214,12 +216,54 @@ static esp_err_t create_plug(gpio_plug* plug, node_t* node)
     power_topology::create(electrical_sensor_endpoint, &(electrical_sensor_config.power_topology), CLUSTER_FLAG_SERVER,
                             power_topology::feature::set_topology::get_id());
     /* EPM */
-    electrical_power_measurement::create(electrical_sensor_endpoint, &(electrical_sensor_config.electrical_power_measurement), CLUSTER_FLAG_SERVER,
+    electrical_power_measurement::config_t measurement_power_config;
+    esp_matter::cluster_t *epower_cluster = electrical_power_measurement::create(electrical_sensor_endpoint, &(electrical_sensor_config.electrical_power_measurement), CLUSTER_FLAG_SERVER,
                             electrical_power_measurement::feature::alternating_current::get_id());
+    int64_t voltage = 230 * 1000; // mV
+    int64_t active_power = 50 * 1000; // mW
+    int64_t active_current = 1 * 1000; // mA
+    int measurement_types = 3;
+    cluster::electrical_power_measurement::attribute::create_voltage(epower_cluster, voltage);
+    cluster::electrical_power_measurement::attribute::create_active_power(epower_cluster, active_power);
+    cluster::electrical_power_measurement::attribute::create_active_current(epower_cluster, active_current);
+    cluster::electrical_power_measurement::attribute::create_number_of_measurement_types(epower_cluster, measurement_types);
+
     /* EEM */
     electrical_energy_measurement::config_t econfig;
-    electrical_energy_measurement::create(electrical_sensor_endpoint, &econfig, CLUSTER_FLAG_SERVER,
-                            electrical_energy_measurement::feature::imported_energy::get_id() | electrical_energy_measurement::feature::periodic_energy::get_id());
+    auto cumulative_energy_feature = electrical_energy_measurement::feature::cumulative_energy::get_id();
+    auto imported_energy_feature = electrical_energy_measurement::feature::imported_energy::get_id();
+    esp_matter::cluster_t *energy_cluster = electrical_energy_measurement::create(electrical_sensor_endpoint, &econfig, CLUSTER_FLAG_SERVER,
+        cumulative_energy_feature | imported_energy_feature);
+
+	auto mask = chip::BitMask<chip::app::Clusters::ElectricalEnergyMeasurement::Feature>(
+        chip::app::Clusters::ElectricalEnergyMeasurement::Feature::kCumulativeEnergy, 
+        chip::app::Clusters::ElectricalEnergyMeasurement::Feature::kImportedEnergy);
+	auto optionalmask = chip::BitMask<chip::app::Clusters::ElectricalEnergyMeasurement::OptionalAttributes>(
+        chip::app::Clusters::ElectricalEnergyMeasurement::OptionalAttributes::kOptionalAttributeCumulativeEnergyReset);
+	energyMeasurementAccess = new chip::app::Clusters::ElectricalEnergyMeasurement::ElectricalEnergyMeasurementAttrAccess(mask,optionalmask);
+
+	auto initerr = energyMeasurementAccess->Init();
+	if (chip::ChipError::IsSuccess(initerr) == false) {
+		ESP_LOGE(TAG, "energyMeasurementAccess->Init() ERR");
+	}
+	
+    int max_energy = 10000;
+	chip::app::Clusters::ElectricalEnergyMeasurement::Structs::MeasurementAccuracyStruct::Type measurementAccuracy;
+	chip::app::Clusters::ElectricalEnergyMeasurement::Structs::MeasurementAccuracyRangeStruct::Type measurementAccuracyRange;
+	measurementAccuracy.measured = true;
+	measurementAccuracy.measurementType = chip::app::Clusters::detail::MeasurementTypeEnum::kElectricalEnergy;
+	measurementAccuracy.maxMeasuredValue = max_energy;
+	measurementAccuracy.minMeasuredValue = 0;
+
+	measurementAccuracyRange.rangeMax = max_energy;
+	measurementAccuracyRange.rangeMin = 0;
+	// measurementAccuracyRange.percentMax.SetValue(energy_max_accuracy);
+	// measurementAccuracyRange.percentMin.SetValue(energy_min_accuracy);
+	// measurementAccuracyRange.percentTypical.SetValue(energy_typ_accuracy);
+	measurementAccuracyRange.fixedMax.SetValue(187650443764698);
+	measurementAccuracyRange.fixedMin.SetValue(187650443764696);
+	measurementAccuracyRange.fixedTypical.SetValue(0);
+	measurementAccuracy.accuracyRanges = {measurementAccuracyRange};
 
     /* Set parts_list attribute on the parent EP */
     err = set_parent_endpoint(electrical_sensor_endpoint, endpoint);
