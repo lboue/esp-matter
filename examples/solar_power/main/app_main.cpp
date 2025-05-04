@@ -105,10 +105,15 @@ extern "C" void app_main()
     ABORT_APP_ON_FAILURE(node != nullptr, ESP_LOGE(TAG, "Failed to create Matter node"));
 
     // "Identify", "Groups", "Scenes", "Refrigerator Mode Select" and "Refrigerator Alarm" are optional cluster for refrigerator device type so we are not adding them by default.
-    refrigerator::config_t refrigerator_config;
-    endpoint_t *endpoint = refrigerator::create(node, &refrigerator_config, ENDPOINT_FLAG_NONE, NULL);
+    //refrigerator::config_t refrigerator_config;
+    solar_power ::config_t solar_power;
+    endpoint_t *endpoint = solar_power::create(node, &refrigerator_config, ENDPOINT_FLAG_NONE, NULL);
     ABORT_APP_ON_FAILURE(endpoint != nullptr, ESP_LOGE(TAG, "Failed to create refrigerator endpoint"));
 
+    solar_power_endpoint_id = endpoint::get_id(endpoint);
+    ESP_LOGI(TAG, "Solar Power created with endpoint_id %d", solar_power_endpoint_id);
+
+    /*
     // "Temperature Measurement", "Refrigerator and Temperature Controlled Cabinet Mode Select" are optional cluster for temperature_controlled_cabinet device type so we are not adding them by default.
     temperature_controlled_cabinet::config_t temperature_controlled_cabinet_config;
     endpoint_t *endpoint1 = temperature_controlled_cabinet::create(node, &temperature_controlled_cabinet_config, ENDPOINT_FLAG_NONE, NULL);
@@ -116,18 +121,16 @@ extern "C" void app_main()
 
     esp_matter::cluster_t *cluster = esp_matter::cluster::get(endpoint1, chip::app::Clusters::TemperatureControl::Id);
 
-    // Atlest one of temperature_number and temperature_level feature is mandatory.
+    // At lest one of temperature_number and temperature_level feature is mandatory.
     cluster::temperature_control::feature::temperature_number::config_t temperature_number_config;
     cluster::temperature_control::feature::temperature_number::add(cluster, &temperature_number_config);
-
-    refrigerator_endpoint_id = endpoint::get_id(endpoint);
-    ESP_LOGI(TAG, "Refrigerator created with endpoint_id %d", refrigerator_endpoint_id);
 
     temp_ctrl_endpoint_id = endpoint::get_id(endpoint1);
     ESP_LOGI(TAG, "Temperature controlled cabinet created with endpoint_id %d", temp_ctrl_endpoint_id);
 
     err = set_parent_endpoint(endpoint1, endpoint);
     ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to set parent endpoint, err:%d", err));
+    */
 
     /* add device_energy_management device type to main EP */
     add_device_type(endpoint, cluster::device_energy_management::get_device_type_id, cluster::device_energy_management::get_device_type_version);
