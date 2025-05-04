@@ -207,22 +207,23 @@ static esp_err_t create_plug(gpio_plug* plug, node_t* node)
     uint16_t plug_endpoint_id = endpoint::get_id(endpoint);
     ESP_LOGI(TAG, "Plug created with endpoint_id %d", plug_endpoint_id);
 
-    // CUSTOM
     /* Electricalsensor config */
-    //electrical_sensor::config_t config;
     esp_matter::endpoint::electrical_sensor::config_t electrical_sensor_config;
-    endpoint_t *EP_endpoint = esp_matter::endpoint::electrical_sensor::create(node, &electrical_sensor_config, ENDPOINT_FLAG_NONE, NULL);
+    endpoint_t *electrical_sensor_endpoint = esp_matter::endpoint::electrical_sensor::create(node, &electrical_sensor_config, ENDPOINT_FLAG_NONE, NULL);
 
-    power_topology::create(EP_endpoint, &(electrical_sensor_config.power_topology), CLUSTER_FLAG_SERVER,
+    power_topology::create(electrical_sensor_endpoint, &(electrical_sensor_config.power_topology), CLUSTER_FLAG_SERVER,
                             power_topology::feature::set_topology::get_id());
     /* EPM */
-    electrical_power_measurement::create(EP_endpoint, &(electrical_sensor_config.electrical_power_measurement), CLUSTER_FLAG_SERVER,
+    electrical_power_measurement::create(electrical_sensor_endpoint, &(electrical_sensor_config.electrical_power_measurement), CLUSTER_FLAG_SERVER,
                             electrical_power_measurement::feature::alternating_current::get_id());
     /* EEM */
     electrical_energy_measurement::config_t econfig;
-    electrical_energy_measurement::create(EP_endpoint, &econfig, CLUSTER_FLAG_SERVER,
+    electrical_energy_measurement::create(electrical_sensor_endpoint, &econfig, CLUSTER_FLAG_SERVER,
                             electrical_energy_measurement::feature::imported_energy::get_id() | electrical_energy_measurement::feature::periodic_energy::get_id());
 
+    /* Set parts_list attribute on the parent EP */
+    err = set_parent_endpoint(electrical_sensor_endpoint, endpoint);
+    ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to set parent endpoint, err:%d", err));
     return err;
 }
 
