@@ -22,7 +22,7 @@
 #endif
 
 static const char *TAG = "app_main";
-static uint16_t refrigerator_endpoint_id = 0;
+static uint16_t solar_power_endpoint_id = 0;
 static uint16_t temp_ctrl_endpoint_id = 0;
 
 using namespace esp_matter;
@@ -91,6 +91,7 @@ static esp_err_t app_attribute_update_cb(callback_type_t type, uint16_t endpoint
 extern "C" void app_main()
 {
     esp_err_t err = ESP_OK;
+    nullable<int64_t> active_power = 0;
 
     /* Initialize the ESP NVS layer */
     nvs_flash_init();
@@ -106,12 +107,21 @@ extern "C" void app_main()
 
     // "Identify", "Groups", "Scenes", "Refrigerator Mode Select" and "Refrigerator Alarm" are optional cluster for refrigerator device type so we are not adding them by default.
     //refrigerator::config_t refrigerator_config;
-    solar_power ::config_t solar_power;
-    endpoint_t *endpoint = solar_power::create(node, &refrigerator_config, ENDPOINT_FLAG_NONE, NULL);
+    solar_power::config_t solar_power_config;
+    endpoint_t *endpoint = solar_power::create(node, &solar_power_config, ENDPOINT_FLAG_NONE, NULL);
     ABORT_APP_ON_FAILURE(endpoint != nullptr, ESP_LOGE(TAG, "Failed to create refrigerator endpoint"));
+
+    cluster_t *electrical_power_measurement_cluster = cluster::get(endpoint, chip::app::Clusters::ElectricalPowerMeasurement::Id);
+    cluster::electrical_power_measurement::attribute::create_active_power(electrical_power_measurement_cluster, active_power);
 
     solar_power_endpoint_id = endpoint::get_id(endpoint);
     ESP_LOGI(TAG, "Solar Power created with endpoint_id %d", solar_power_endpoint_id);
+
+    device_energy_management::config_t device_energy_management_config;
+    device_energy_management::add(endpoint, &device_energy_management_config);
+
+    cluster_t *device_energy_management_cluster = cluster::get(endpoint, chip::app::Clusters::DeviceEnergyManagement::Id);
+    cluster::device_energy_management::feature::power_adjustment::add(device_energy_management_cluster);
 
     /*
     // "Temperature Measurement", "Refrigerator and Temperature Controlled Cabinet Mode Select" are optional cluster for temperature_controlled_cabinet device type so we are not adding them by default.
@@ -133,13 +143,13 @@ extern "C" void app_main()
     */
 
     /* add device_energy_management device type to main EP */
-    add_device_type(endpoint, endpoint::device_energy_management::get_device_type_id, endpoint::device_energy_management::get_device_type_version);
+    //add_device_type(endpoint, endpoint::device_energy_management::get_device_type_id, endpoint::device_energy_management::get_device_type_version);
 
     /* add electrical_sensor device type to main EP */
-    add_device_type(endpoint, endpoint::electrical_sensor::get_device_type_id, endpoint::electrical_sensor::get_device_type_version);
+    //add_device_type(endpoint, cluster::electrical_sensor::get_device_type_id, cluster::electrical_sensor::get_device_type_version);
 
     /* add power_source device type to main EP */
-    add_device_type(endpoint, endpoint::power_source_device::get_device_type_id, endpoint::power_source_device::get_device_type_version);
+    //add_device_type(endpoint, cluster::power_source_device::get_device_type_id, cluster::power_source_device::get_device_type_version);
 
 #if CHIP_DEVICE_CONFIG_ENABLE_THREAD
     /* Set OpenThread platform config */
@@ -155,7 +165,7 @@ extern "C" void app_main()
     err = esp_matter::start(app_event_cb);
     ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to start Matter, err:%d", err));
 
-    chip::app::Clusters::TemperatureControl::SetInstance(&sAppSupportedTemperatureLevelsDelegate);
+    //chip::app::Clusters::TemperatureControl::SetInstance(&sAppSupportedTemperatureLevelsDelegate);
 
 #if CONFIG_ENABLE_CHIP_SHELL
     esp_matter::console::diagnostics_register_commands();
