@@ -26,8 +26,6 @@
 #include <app/server/CommissioningWindowManager.h>
 #include <app/server/Server.h>
 
-#include <app/clusters/electrical-energy-measurement-server/electrical-energy-measurement-server.h>
-
 #define CREATE_PLUG(node, plug_id) \
     struct gpio_plug plug##plug_id; \
     plug##plug_id.GPIO_PIN_VALUE = (gpio_num_t) CONFIG_GPIO_PLUG_##plug_id; \
@@ -37,6 +35,7 @@ static const char *TAG = "app_main";
 
 using namespace esp_matter;
 using namespace esp_matter::attribute;
+using namespace esp_matter::cluster;
 using namespace esp_matter::endpoint;
 using namespace chip::app::Clusters;
 
@@ -52,8 +51,6 @@ extern const char decryption_key_end[] asm("_binary_esp_image_encryption_key_pem
 static const char *s_decryption_key = decryption_key_start;
 static const uint16_t s_decryption_key_len = decryption_key_end - decryption_key_start;
 #endif // CONFIG_ENABLE_ENCRYPTED_OTA
-
-chip::app::Clusters::ElectricalEnergyMeasurement::ElectricalEnergyMeasurementAttrAccess* energyMeasurementAccess;
 
 static void app_event_cb(const ChipDeviceEvent *event, intptr_t arg)
 {
@@ -197,28 +194,6 @@ static esp_err_t create_plug(gpio_plug* plug, node_t* node)
         ESP_LOGE(TAG, "Failed to initialize plug");
     }
 
-   // CUSTOM
-   electrical_sensor::config_t electrical_sensor_config;
-   endpoint_t *electrical_endpoint = electrical_sensor::create(node, &electrical_sensor_config, ENDPOINT_FLAG_NONE, electrical_sensor_handle);
-   if (electrical_endpoint)
-   {
-   electrical_endpoint_id = endpoint::get_id(electrical_endpoint);
-   ESP_LOGI(TAG, "ElectricalSensor Endpoint: %d", electrical_endpoint_id);
-   }
-
-   // measurement_power_config
-   cluster::electrical_power_measurement::config_t power_measurement_config;
-   auto esp_matter::cluster_t *epower_cluster = cluster::electrical_power_measurement::create(electrical_endpoint, &power_measurement_config, CLUSTER_FLAG_SERVER, cluster::electrical_power_measurement::feature::alternating_current::get_id());
-
-   // energy_measurement_config
-   esp_matter::cluster::electrical_energy_measurement::config_t energy_measurement_config;
-   // features
-   auto cumulative_energy_feature = esp_matter::cluster::electrical_energy_measurement::feature::cumulative_energy::get_id();
-   auto imported_energy_feature = esp_matter::cluster::electrical_energy_measurement::feature::imported_energy::get_id();
-   
-   // Create electrical_energy_measurement cluster
-   auto relay_energy_measurement_cluster = esp_matter::cluster::electrical_energy_measurement::create(electrical_endpoint_id, &energy_measurement_config, esp_matter::CLUSTER_FLAG_SERVER, cumulative_energy_feature | imported_energy_feature);
-
     // Check for maximum plugs that can be configured.
     if (configure_plugs < CONFIG_NUM_VIRTUAL_PLUGS) {
         plugin_unit_list[configure_plugs].plug = plug->GPIO_PIN_VALUE;
@@ -231,6 +206,23 @@ static esp_err_t create_plug(gpio_plug* plug, node_t* node)
 
     uint16_t plug_endpoint_id = endpoint::get_id(endpoint);
     ESP_LOGI(TAG, "Plug created with endpoint_id %d", plug_endpoint_id);
+
+    // CUSTOM
+    /* Electricalsensor config */
+    //electrical_sensor::config_t config;
+    esp_matter::endpoint::electrical_sensor::config_t electrical_sensor_config;
+    endpoint_t *EP_endpoint = esp_matter::endpoint::electrical_sensor::create(node, &electrical_sensor_config, ENDPOINT_FLAG_NONE, NULL);
+
+    power_topology::create(EP_endpoint, &(electrical_sensor_config.power_topology), CLUSTER_FLAG_SERVER,
+                            power_topology::feature::set_topology::get_id());
+    /* EPM */
+    electrical_power_measurement::create(EP_endpoint, &(electrical_sensor_config.electrical_power_measurement), CLUSTER_FLAG_SERVER,
+                            electrical_power_measurement::feature::alternating_current::get_id());
+    /* EEM */
+    electrical_energy_measurement::config_t econfig;
+    electrical_energy_measurement::create(EP_endpoint, &econfig, CLUSTER_FLAG_SERVER,
+                            electrical_energy_measurement::feature::imported_energy::get_id() | electrical_energy_measurement::feature::periodic_energy::get_id());
+
     return err;
 }
 
