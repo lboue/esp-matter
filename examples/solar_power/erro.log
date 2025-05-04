@@ -1,0 +1,123 @@
+I (1117) CHIP[DL]: BLE host-controller synced
+I (1617) chip[DL]: Starting ESP WiFi layer
+W (1617) wifi:ACK_TAB0   :0x   90a0b, QAM16:0x9 (24Mbps), QPSK:0xa (12Mbps), BPSK:0xb (6Mbps)
+W (1617) wifi:CTS_TAB0   :0x   90a0b, QAM16:0x9 (24Mbps), QPSK:0xa (12Mbps), BPSK:0xb (6Mbps)
+W (1617) wifi:(agc)0x600a7128:0xd20149d8, min.avgNF:0xce->0xd2(dB), RCalCount:0x14, min.RRssi:0x9d8(-98.50)
+W (1627) wifi:(TB)WDEV_PWR_TB_MCS0:19
+W (1637) wifi:(TB)WDEV_PWR_TB_MCS1:19
+W (1637) wifi:(TB)WDEV_PWR_TB_MCS2:19
+W (1637) wifi:(TB)WDEV_PWR_TB_MCS3:19
+W (1647) wifi:(TB)WDEV_PWR_TB_MCS4:19
+W (1647) wifi:(TB)WDEV_PWR_TB_MCS5:19
+W (1647) wifi:(TB)WDEV_PWR_TB_MCS6:18
+W (1657) wifi:(TB)WDEV_PWR_TB_MCS7:18
+W (1657) wifi:(TB)WDEV_PWR_TB_MCS8:17
+W (1657) wifi:(TB)WDEV_PWR_TB_MCS9:15
+W (1667) wifi:(TB)WDEV_PWR_TB_MCS10:15
+W (1667) wifi:(TB)WDEV_PWR_TB_MCS11:15
+I (1667) wifi:11ax coex: WDEVAX_PTI0(0x55777555), WDEVAX_PTI1(0x00003377).
+
+I (1677) wifi:mode : sta (60:55:f9:f7:02:34)
+I (1687) wifi:enable tsf
+I (1687) chip[DL]: Posting ESPSystemEvent: Wifi Event with eventId : 43
+W (1687) wifi:Haven't to connect to a suitable AP now!
+I (1697) chip[DL]: Done driving station state, nothing else to do...
+I (1707) chip[DL]: Posting ESPSystemEvent: Wifi Event with eventId : 2
+W (1707) wifi:Haven't to connect to a suitable AP now!
+I (1717) chip[DL]: Done driving station state, nothing else to do...
+I (1717) chip[SVR]: Initializing subscription resumption storage...
+I (1727) chip[SVR]: Server initializing...
+I (1727) chip[TS]: Last Known Good Time: 2023-10-14T01:16:48
+I (1737) chip[DMG]: AccessControl: initializing
+I (1737) chip[DMG]: Examples::AccessControlDelegate::Init
+I (1747) chip[DMG]: AccessControl: setting
+I (1747) chip[DMG]: DefaultAclStorage: initializing
+I (1757) chip[DMG]: DefaultAclStorage: 0 entries loaded
+I (1757) chip[SVR]: WARNING: mTestEventTriggerDelegate is null
+I (1777) chip[ZCL]: Using ZAP configuration...
+I (1777) esp_matter_cluster: Cluster plugin init common callback
+I (1777) chip[DMG]: AccessControlCluster: initializing
+I (1787) chip[ZCL]: WRITE ERR: ep 0 clus 0x0000_0030 attr 0x0000_0000 not supported
+I (1787) chip[ZCL]: Initiating Admin Commissioning cluster.
+I (1797) chip[DIS]: Updating services using commissioning mode 1
+I (1807) chip[DIS]: CHIP minimal mDNS started advertising.
+I (1807) chip[DIS]: Advertise commission parameter vendorID=65521 productID=32768 discriminator=3840/15 cm=1 cp=0
+I (1817) chip[DIS]: CHIP minimal mDNS configured as 'Commissionable node device'; instance name: 0831F3DCEDED6CF0.
+I (1827) chip[DIS]: mDNS service published: _matterc._udp
+I (1837) chip[IN]: CASE Server enabling CASE session setups
+I (1837) chip[SVR]: Joining Multicast groups
+I (1837) chip[SVR]: Server Listening...
+I (1847) esp_matter_core: Dynamic endpoint 0 added
+I (1847) esp_matter_core: Dynamic endpoint 1 added
+I (1857) chip[DL]: WIFI_EVENT_STA_START
+W (1857) wifi:Haven't to connect to a suitable AP now!
+I (1867) chip[DL]: Done driving station state, nothing else to do...
+I (1867) chip[DL]: Configuring CHIPoBLE advertising (interval 25 ms, connectable)
+I (1877) NimBLE: GAP procedure initiated: advertise; 
+I (1877) NimBLE: disc_mode=2
+I (1887) NimBLE:  adv_channel_map=0 own_addr_type=1 adv_filter_policy=0 adv_itvl_min=40 adv_itvl_max=40
+I (1897) NimBLE: 
+
+I (1897) chip[DL]: CHIPoBLE advertising started
+I (1897) app_main: Commissioning window opened
+E (1907) chip[DL]: Chip stack locking error at '/home/ludovic/esp-matter/connectedhomeip/connectedhomeip/src/app/reporting/reporting.cpp:33'. Code is unsafe/racy
+E (1917) chip[-]: chipDie chipDie chipDie
+
+abort() was called at PC 0x420548ad on core 0
+--- 0x420548ad: chip::Platform::Internal::AssertChipStackLockedByCurrentThread(char const*, int) at /home/ludovic/esp-matter/examples/refrigerator/build/esp-idf/chip/../../../../../connectedhomeip/connectedhomeip/config/esp32/third_party/connectedhomeip/src/lib/support/CodeUtils.h:484
+---  (inlined by) chipDie at /home/ludovic/esp-matter/examples/refrigerator/build/esp-idf/chip/../../../../../connectedhomeip/connectedhomeip/config/esp32/third_party/connectedhomeip/src/lib/support/CodeUtils.h:494
+---  (inlined by) chip::Platform::Internal::AssertChipStackLockedByCurrentThread(char const*, int) at /home/ludovic/esp-matter/examples/refrigerator/build/esp-idf/chip/../../../../../connectedhomeip/connectedhomeip/config/esp32/third_party/connectedhomeip/src/platform/LockTracker.cpp:36
+
+--- Stack dump detected
+Core  0 register dump:
+MEPC    : 0x40800862  RA      : 0x4080d5ee  SP      : 0x4083bdf0  GP      : 0x4081f534  
+--- 0x40800862: panic_abort at /home/ludovic/esp/esp-idf/components/esp_system/panic.c:482
+--- 0x4080d5ee: __ubsan_include at /home/ludovic/esp/esp-idf/components/esp_system/ubsan.c:311
+
+TP      : 0x4083c170  T0      : 0x37363534  T1      : 0x7271706f  T2      : 0x33323130  
+S0/FP   : 0x4083be2c  S1      : 0x4083be2c  A0      : 0x4083be2c  A1      : 0x4083be0e  
+A2      : 0x00000000  A3      : 0x4083be59  A4      : 0x00000001  A5      : 0x40837000  
+A6      : 0x00000000  A7      : 0x76757473  S2      : 0x4083be10  S3      : 0x40837000  
+S4      : 0x00000000  S5      : 0x00000000  S6      : 0x00000000  S7      : 0x00000000  
+S8      : 0x00000000  S9      : 0x00000000  S10     : 0x00000000  S11     : 0x00000000  
+T3      : 0x6e6d6c6b  T4      : 0x6a696867  T5      : 0x66656463  T6      : 0x62613938  
+MSTATUS : 0x00001881  MTVEC   : 0x40800001  MCAUSE  : 0x00000002  MTVAL   : 0x00000000  
+--- 0x40800001: _vector_table at /home/ludovic/esp/esp-idf/components/riscv/vectors_intc.S:54
+
+MHARTID : 0x00000000  
+
+
+--- Backtrace:
+
+
+panic_abort (details=details@entry=0x4083be2c "abort() was called at PC 0x420548ad on core 0") at /home/ludovic/esp/esp-idf/components/esp_system/panic.c:482
+482	    asm("unimp");   // should be an invalid operation on RISC-V targets
+#0  panic_abort (details=details@entry=0x4083be2c "abort() was called at PC 0x420548ad on core 0") at /home/ludovic/esp/esp-idf/components/esp_system/panic.c:482
+#1  0x4080d5ee in esp_system_abort (details=details@entry=0x4083be2c "abort() was called at PC 0x420548ad on core 0") at /home/ludovic/esp/esp-idf/components/esp_system/port/esp_system_chip.c:87
+#2  0x4081463c in abort () at /home/ludovic/esp/esp-idf/components/newlib/abort.c:38
+#3  0x420548b0 in chipAbort () at ../../../../../connectedhomeip/connectedhomeip/config/esp32/third_party/connectedhomeip/src/lib/support/CodeUtils.h:484
+#4  chipDie () at ../../../../../connectedhomeip/connectedhomeip/config/esp32/third_party/connectedhomeip/src/lib/support/CodeUtils.h:494
+#5  chip::Platform::Internal::AssertChipStackLockedByCurrentThread (file=file@entry=0x4215b2b8 "", line=line@entry=33) at ../../../../../connectedhomeip/connectedhomeip/config/esp32/third_party/connectedhomeip/src/platform/LockTracker.cpp:36
+#6  0x4203c9be in MatterReportingAttributeChangeCallback (endpoint=endpoint@entry=1, clusterId=clusterId@entry=145, attributeId=attributeId@entry=0) at /home/ludovic/esp-matter/connectedhomeip/connectedhomeip/src/app/reporting/reporting.cpp:33
+#7  0x4201c04a in chip::app::Clusters::ElectricalEnergyMeasurement::SetMeasurementAccuracy (endpointId=1, accuracy=...) at /home/ludovic/esp-matter/connectedhomeip/connectedhomeip/src/app/clusters/electrical-energy-measurement-server/electrical-energy-measurement-server.cpp:172
+#8  0x4200cc88 in app_main () at /home/ludovic/esp-matter/examples/refrigerator/main/app_main.cpp:211
+#9  0x42149d82 in main_task (args=<error reading variable: value has been optimized out>) at /home/ludovic/esp/esp-idf/components/freertos/app_startup.c:208
+#10 0x4080d62e in vPortTaskWrapper (pxCode=<optimized out>, pvParameters=<optimized out>) at /home/ludovic/esp/esp-idf/components/freertos/FreeRTOS-Kernel/portable/riscv/port.c:255
+
+
+
+ELF file SHA256: 3175f2e62
+
+Rebooting...
+ESP-ROM:esp32c6-20220919
+Build:Sep 19 2022
+rst:0xc (SW_CPU),boot:0xc (SPI_FAST_FLASH_BOOT)
+Saved PC:0x4001975a
+--- 0x4001975a: software_reset_cpu in ROM
+
+SPIWP:0xee
+mode:DIO, clock div:2
+load:0x40875720,len:0x16b8
+load:0x4086c110,len:0xe90
+load:0x4086e610,len:0x3054
+entry 0x4086c11a
