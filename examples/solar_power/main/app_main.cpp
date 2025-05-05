@@ -29,6 +29,7 @@ static uint16_t solar_power_endpoint_id = 0;
 using namespace esp_matter;
 using namespace esp_matter::attribute;
 using namespace esp_matter::endpoint;
+using namespace chip::app::Clusters;
 
 static chip::app::Clusters::TemperatureControl::AppSupportedTemperatureLevelsDelegate sAppSupportedTemperatureLevelsDelegate;
 static void app_event_cb(const ChipDeviceEvent *event, intptr_t arg)
@@ -92,7 +93,7 @@ static esp_err_t app_attribute_update_cb(callback_type_t type, uint16_t endpoint
 extern "C" void app_main()
 {
     esp_err_t err = ESP_OK;
-    nullable<int64_t> active_power = 10000;
+    nullable<int64_t> active_power = 0;
 
     /* Initialize the ESP NVS layer */
     nvs_flash_init();
@@ -174,14 +175,25 @@ extern "C" void app_main()
     err = esp_matter::start(app_event_cb);
     ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to start Matter, err:%d", err));
 
-    /* 
-    esp_matter::attribute::update(solar_power_endpoint_id, ElectricalPowerMeasurement::Id, ElectricalPowerMeasurement::Attributes::Voltage::Id, &voltage);
-    esp_matter::attribute::update(solar_power_endpoint_id, ElectricalPowerMeasurement::Id, ElectricalPowerMeasurement::Attributes::ActiveCurrent::Id, &active_current);
-    esp_matter::attribute::update(solar_power_endpoint_id, ElectricalPowerMeasurement::Id, ElectricalPowerMeasurement::Attributes::ActivePower::Id, &active_power);
-    */
-    
-    // SetMeasurementAccuracy
+    /* Update ElectricalPowerMeasurement values */
+    esp_matter_attr_val_t active_current_val_t = esp_matter_invalid(NULL);
+    esp_matter_attr_val_t active_power_val_t = esp_matter_invalid(NULL);
+    esp_matter_attr_val_t voltage_val_t = esp_matter_invalid(NULL);
 
+    active_current_val_t.type = esp_matter_val_type_t::ESP_MATTER_VAL_TYPE_INT64;
+    active_current_val_t.val.i64 = 1 * 1000;
+
+    active_power_val_t.type = esp_matter_val_type_t::ESP_MATTER_VAL_TYPE_INT64;
+    active_power_val_t.val.i64 = 10 * 1000;
+
+    voltage_val_t.type = esp_matter_val_type_t::ESP_MATTER_VAL_TYPE_INT64;
+    voltage_val_t.val.i64 = 230 * 1000;
+
+    esp_matter::attribute::update(solar_power_endpoint_id, ElectricalPowerMeasurement::Id, ElectricalPowerMeasurement::Attributes::ActiveCurrent::Id, &active_current_val_t);
+    esp_matter::attribute::update(solar_power_endpoint_id, ElectricalPowerMeasurement::Id, ElectricalPowerMeasurement::Attributes::ActivePower::Id, &active_power_val_t);
+    esp_matter::attribute::update(solar_power_endpoint_id, ElectricalPowerMeasurement::Id, ElectricalPowerMeasurement::Attributes::Voltage::Id, &voltage_val_t);
+
+    // SetMeasurementAccuracy
 	auto mask = chip::BitMask<chip::app::Clusters::ElectricalEnergyMeasurement::Feature>(
         chip::app::Clusters::ElectricalEnergyMeasurement::Feature::kCumulativeEnergy, 
         chip::app::Clusters::ElectricalEnergyMeasurement::Feature::kImportedEnergy);
@@ -194,7 +206,7 @@ extern "C" void app_main()
 		ESP_LOGE(TAG, "energyMeasurementAccess->Init() ERR");
 	}
 	
-    	int max_energy = 100;
+    int max_energy = 100;
 	chip::app::Clusters::ElectricalEnergyMeasurement::Structs::MeasurementAccuracyStruct::Type measurementAccuracy;
 	static chip::app::Clusters::ElectricalEnergyMeasurement::Structs::MeasurementAccuracyRangeStruct::Type sMeasurementAccuracyRange;
 
@@ -214,21 +226,15 @@ extern "C" void app_main()
 
 	measurementAccuracy.accuracyRanges = {sMeasurementAccuracyRange};
 
-	/*
-    	auto err_accu = chip::app::Clusters::ElectricalEnergyMeasurement::SetMeasurementAccuracy(solar_power_endpoint_id, measurementAccuracy);
+    /*
+    auto err_accu = chip::app::Clusters::ElectricalEnergyMeasurement::SetMeasurementAccuracy(solar_power_endpoint_id, measurementAccuracy);
 	if (chip::ChipError::IsSuccess(err_accu) == false) { 
 		//logger.E("SetMeasurementAccuracy ERR %u %u", err_accu.GetRange(), err_accu.GetValue()); // Change to log_e or your own logger
         ESP_LOGI(TAG, "SetMeasurementAccuracy ERR");
 	}
- 	*/
 
     int energy_value = 10000;
     int endpoint_id = 1;
-
-    /* 
-        https://github.com/project-chip/connectedhomeip/blob/master/src/app/clusters/electrical-energy-measurement-server/electrical-energy-measurement-server.h
-        https://github.com/project-chip/connectedhomeip/blob/master/examples/dishwasher-app/silabs/src/ElectricalEnergyMeasurementInstance.cpp
-    */
     chip::app::Clusters::ElectricalEnergyMeasurement::Structs::EnergyMeasurementStruct::Type measurement;
     measurement.startTimestamp.SetValue(1746380384); // Change to your marked start EPOCH time of energy
     measurement.endTimestamp.SetValue(1746386384); // Change to your own API to get EPOCH time (Or use systime APIs)
@@ -238,6 +244,7 @@ extern "C" void app_main()
     auto success = chip::app::Clusters::ElectricalEnergyMeasurement::NotifyCumulativeEnergyMeasured(solar_power_endpoint_id, {},
                    chip::Optional<chip::app::Clusters::ElectricalEnergyMeasurement::Structs::EnergyMeasurementStruct::Type> (measurement));
     ESP_LOGI(TAG, "NotifyCumulativeEnergyMeasured()");
+    */
 
 #if CONFIG_ENABLE_CHIP_SHELL
     esp_matter::console::diagnostics_register_commands();
