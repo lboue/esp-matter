@@ -115,6 +115,8 @@ extern "C" void app_main()
 
     cluster_t *electrical_power_measurement_cluster = cluster::get(endpoint, chip::app::Clusters::ElectricalPowerMeasurement::Id);
     cluster::electrical_power_measurement::attribute::create_active_power(electrical_power_measurement_cluster, active_power);
+    // NumberOfMeasurementTypes
+    // cluster::electrical_power_measurement::attribute::create_number_of_measurement_types(electrical_power_measurement_cluster, 3);
 
     solar_power_endpoint_id = endpoint::get_id(endpoint);
     ESP_LOGI(TAG, "Solar Power created with endpoint_id %d", solar_power_endpoint_id);
@@ -176,22 +178,15 @@ extern "C" void app_main()
     ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to start Matter, err:%d", err));
 
     /* Update ElectricalPowerMeasurement values */
-    esp_matter_attr_val_t active_current_val_t = esp_matter_invalid(NULL);
-    esp_matter_attr_val_t active_power_val_t = esp_matter_invalid(NULL);
-    esp_matter_attr_val_t voltage_val_t = esp_matter_invalid(NULL);
-
-    active_current_val_t.type = esp_matter_val_type_t::ESP_MATTER_VAL_TYPE_INT64;
-    active_current_val_t.val.i64 = 1 * 1000;
-
-    active_power_val_t.type = esp_matter_val_type_t::ESP_MATTER_VAL_TYPE_INT64;
-    active_power_val_t.val.i64 = 10 * 1000;
-
-    voltage_val_t.type = esp_matter_val_type_t::ESP_MATTER_VAL_TYPE_INT64;
-    voltage_val_t.val.i64 = 230 * 1000;
+    esp_matter_attr_val_t active_current_val_t  = esp_matter_int64(2 * 1000);
+    esp_matter_attr_val_t active_power_val_t    = esp_matter_int64(20 * 1000);
+    esp_matter_attr_val_t voltage_val_t         = esp_matter_int64(230 * 1000);
+    esp_matter_attr_val_t mes_types_val_t       = esp_matter_uint8(3);
 
     esp_matter::attribute::update(solar_power_endpoint_id, ElectricalPowerMeasurement::Id, ElectricalPowerMeasurement::Attributes::ActiveCurrent::Id, &active_current_val_t);
     esp_matter::attribute::update(solar_power_endpoint_id, ElectricalPowerMeasurement::Id, ElectricalPowerMeasurement::Attributes::ActivePower::Id, &active_power_val_t);
     esp_matter::attribute::update(solar_power_endpoint_id, ElectricalPowerMeasurement::Id, ElectricalPowerMeasurement::Attributes::Voltage::Id, &voltage_val_t);
+    esp_matter::attribute::update(solar_power_endpoint_id, ElectricalPowerMeasurement::Id, ElectricalPowerMeasurement::Attributes::NumberOfMeasurementTypes::Id, &mes_types_val_t);
 
     // SetMeasurementAccuracy
 	auto mask = chip::BitMask<chip::app::Clusters::ElectricalEnergyMeasurement::Feature>(
