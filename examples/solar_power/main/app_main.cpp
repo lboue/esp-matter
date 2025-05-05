@@ -92,7 +92,7 @@ static esp_err_t app_attribute_update_cb(callback_type_t type, uint16_t endpoint
 extern "C" void app_main()
 {
     esp_err_t err = ESP_OK;
-    nullable<int64_t> active_power = 0;
+    nullable<int64_t> active_power = 10000;
 
     /* Initialize the ESP NVS layer */
     nvs_flash_init();
@@ -174,6 +174,12 @@ extern "C" void app_main()
     err = esp_matter::start(app_event_cb);
     ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to start Matter, err:%d", err));
 
+    /* 
+    esp_matter::attribute::update(solar_power_endpoint_id, ElectricalPowerMeasurement::Id, ElectricalPowerMeasurement::Attributes::Voltage::Id, &voltage);
+    esp_matter::attribute::update(solar_power_endpoint_id, ElectricalPowerMeasurement::Id, ElectricalPowerMeasurement::Attributes::ActiveCurrent::Id, &active_current);
+    esp_matter::attribute::update(solar_power_endpoint_id, ElectricalPowerMeasurement::Id, ElectricalPowerMeasurement::Attributes::ActivePower::Id, &active_power);
+    */
+    
     // SetMeasurementAccuracy
 
 	auto mask = chip::BitMask<chip::app::Clusters::ElectricalEnergyMeasurement::Feature>(
@@ -188,7 +194,7 @@ extern "C" void app_main()
 		ESP_LOGE(TAG, "energyMeasurementAccess->Init() ERR");
 	}
 	
-    int max_energy = 100;
+    	int max_energy = 100;
 	chip::app::Clusters::ElectricalEnergyMeasurement::Structs::MeasurementAccuracyStruct::Type measurementAccuracy;
 	static chip::app::Clusters::ElectricalEnergyMeasurement::Structs::MeasurementAccuracyRangeStruct::Type sMeasurementAccuracyRange;
 
@@ -208,11 +214,13 @@ extern "C" void app_main()
 
 	measurementAccuracy.accuracyRanges = {sMeasurementAccuracyRange};
 
-    auto err_accu = chip::app::Clusters::ElectricalEnergyMeasurement::SetMeasurementAccuracy(solar_power_endpoint_id, measurementAccuracy);
+	/*
+    	auto err_accu = chip::app::Clusters::ElectricalEnergyMeasurement::SetMeasurementAccuracy(solar_power_endpoint_id, measurementAccuracy);
 	if (chip::ChipError::IsSuccess(err_accu) == false) { 
 		//logger.E("SetMeasurementAccuracy ERR %u %u", err_accu.GetRange(), err_accu.GetValue()); // Change to log_e or your own logger
         ESP_LOGI(TAG, "SetMeasurementAccuracy ERR");
 	}
+ 	*/
 
     int energy_value = 10000;
     int endpoint_id = 1;
