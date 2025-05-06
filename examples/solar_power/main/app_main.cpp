@@ -227,12 +227,14 @@ extern "C" void app_main()
 
 	measurementAccuracy.accuracyRanges = {sMeasurementAccuracyRange};
 
-    
+    lock::chip_stack_lock(portMAX_DELAY);
     auto err_accu = chip::app::Clusters::ElectricalEnergyMeasurement::SetMeasurementAccuracy(solar_power_endpoint_id, measurementAccuracy);
 	if (chip::ChipError::IsSuccess(err_accu) == false) { 
 		//logger.E("SetMeasurementAccuracy ERR %u %u", err_accu.GetRange(), err_accu.GetValue()); // Change to log_e or your own logger
         ESP_LOGI(TAG, "SetMeasurementAccuracy ERR");
 	}
+    lock::chip_stack_unlock();
+
     /*
     int energy_value = 10000;
     int endpoint_id = 1;
