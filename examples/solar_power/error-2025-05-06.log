@@ -1,0 +1,236 @@
+I (23) boot: ESP-IDF v5.4.1-374-gef1a5075f5 2nd stage bootloader
+I (24) boot: compile time May  5 2025 13:06:28
+I (24) boot: chip revision: v0.0
+I (25) boot: efuse block revision: v0.0
+I (29) boot.esp32c6: SPI Speed      : 80MHz
+I (32) boot.esp32c6: SPI Mode       : DIO
+I (36) boot.esp32c6: SPI Flash Size : 4MB
+I (40) boot: Enabling RNG early entropy source...
+I (44) boot: Partition Table:
+I (47) boot: ## Label            Usage          Type ST Offset   Length
+I (53) boot:  0 esp_secure_cert  unknown          3f 06 0000d000 00002000
+I (60) boot:  1 nvs              WiFi data        01 02 00010000 00006000
+I (66) boot:  2 nvs_keys         NVS keys         01 04 00016000 00001000
+I (73) boot:  3 otadata          OTA data         01 00 00017000 00002000
+I (79) boot:  4 phy_init         RF data          01 01 00019000 00001000
+I (86) boot:  5 ota_0            OTA app          00 10 00020000 001e0000
+I (92) boot:  6 ota_1            OTA app          00 11 00200000 001e0000
+I (99) boot:  7 fctry            WiFi data        01 02 003e0000 00006000
+I (106) boot: End of partition table
+I (109) esp_image: segment 0: paddr=00020020 vaddr=42150020 size=3c518h (247064) map
+I (162) esp_image: segment 1: paddr=0005c540 vaddr=40800000 size=03ad8h ( 15064) load
+I (166) esp_image: segment 2: paddr=00060020 vaddr=42000020 size=14a28ch (1352332) map
+I (416) esp_image: segment 3: paddr=001aa2b4 vaddr=40803ad8 size=1b258h (111192) load
+I (440) esp_image: segment 4: paddr=001c5514 vaddr=4081ed30 size=04348h ( 17224) load
+I (451) boot: Loaded app from partition at offset 0x20000
+I (452) boot: Disabling RNG early entropy source...
+I (463) cpu_start: Unicore app
+I (471) cpu_start: Pro cpu start user code
+I (472) cpu_start: cpu freq: 160000000 Hz
+I (472) app_init: Application information:
+I (472) app_init: Project name:     light_switch
+I (476) app_init: App version:      v1.0
+I (480) app_init: Compile time:     May  5 2025 13:06:07
+I (485) app_init: ELF file SHA256:  b1bd332b5...
+I (489) app_init: ESP-IDF:          v5.4.1-374-gef1a5075f5
+I (494) efuse_init: Min chip rev:     v0.0
+I (498) efuse_init: Max chip rev:     v0.99 
+I (502) efuse_init: Chip rev:         v0.0
+I (506) heap_init: Initializing. RAM available for dynamic allocation:
+I (512) heap_init: At 408390F0 len 00043520 (269 KiB): RAM
+I (517) heap_init: At 4087C610 len 00002F54 (11 KiB): RAM
+I (522) heap_init: At 50000000 len 00003FE8 (15 KiB): RTCRAM
+I (529) spi_flash: detected chip: generic
+I (532) spi_flash: flash io: dio
+W (534) spi_flash: Detected size(8192k) larger than the size in the binary image header(4096k). Using the size in the binary image header.
+I (548) sleep_gpio: Configure to isolate all GPIO pins in sleep state
+I (553) sleep_gpio: Enable automatic switching of GPIO sleep configuration
+I (560) coexist: coex firmware version: 88dafd1
+I (578) coexist: coexist rom version 5b8dcfa
+I (579) main_task: Started on CPU0
+I (579) main_task: Calling app_main()
+I (599) gpio: GPIO[9]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
+I (599) button: IoT Button Version: 4.1.3
+W (609) esp_matter_core: Attribute 0x00000008 on cluster 0x00000090 already exists. Not creating again.
+I (609) app_main: Solar Power created with endpoint_id 1
+I (619) pp: pp rom version: 5b8dcfa
+I (619) net80211: net80211 rom version: 5b8dcfa
+I (639) wifi:wifi driver task: 40845268, prio:23, stack:6656, core=0
+I (639) wifi:wifi firmware version: a862fd7
+I (639) wifi:wifi certification version: v7.0
+I (639) wifi:config NVS flash: enabled
+I (639) wifi:config nano formatting: disabled
+I (649) wifi:mac_version:HAL_MAC_ESP32AX_761,ut_version:N, band mode:0x1
+I (649) wifi:Init data frame dynamic rx buffer num: 32
+I (659) wifi:Init static rx mgmt buffer num: 5
+I (659) wifi:Init management short buffer num: 32
+I (669) wifi:Init dynamic tx buffer num: 32
+I (669) wifi:Init static tx FG buffer num: 2
+I (679) wifi:Init static rx buffer size: 1700 (rxctrl:92, csi:512)
+I (679) wifi:Init static rx buffer num: 10
+I (689) wifi:Init dynamic rx buffer num: 32
+I (689) wifi_init: rx ba win: 6
+I (689) wifi_init: accept mbox: 6
+I (699) wifi_init: tcpip mbox: 32
+I (699) wifi_init: udp mbox: 6
+I (699) wifi_init: tcp mbox: 6
+I (699) wifi_init: tcp tx win: 5760
+I (709) wifi_init: tcp rx win: 5760
+I (709) wifi_init: tcp mss: 1440
+I (709) wifi_init: WiFi IRAM OP enabled
+I (719) wifi_init: WiFi RX IRAM OP enabled
+I (719) wifi_init: WiFi SLP IRAM OP enabled
+I (749) chip[DL]: NVS set: chip-counters/reboot-count = 22 (0x16)
+I (749) chip[DL]: Real time clock set to 946684800 (2000-01-01 00:00:00 UTC)
+I (749) BLE_INIT: Using main XTAL as clock source
+I (749) BLE_INIT: ble controller commit:[ec6437f]
+I (759) BLE_INIT: Bluetooth MAC: 60:55:f9:f7:02:36
+I (759) phy_init: phy_version 331,5b89037,Mar  3 2025,16:01:12
+I (799) phy_init: Saving new calibration data due to checksum failure or outdated calibration data, mode(0)
+I (879) phy: libbtbb version: ec2ecba, Mar  3 2025, 16:01:27
+I (889) NimBLE: GAP procedure initiated: stop advertising.
+
+I (889) CHIP[DL]: BLE host-controller synced
+I (1389) chip[DL]: Starting ESP WiFi layer
+W (1389) wifi:ACK_TAB0   :0x   90a0b, QAM16:0x9 (24Mbps), QPSK:0xa (12Mbps), BPSK:0xb (6Mbps)
+W (1389) wifi:CTS_TAB0   :0x   90a0b, QAM16:0x9 (24Mbps), QPSK:0xa (12Mbps), BPSK:0xb (6Mbps)
+W (1389) wifi:(agc)0x600a7128:0xd21b39f6, min.avgNF:0xce->0xd2(dB), RCalCount:0x1b3, min.RRssi:0x9f6(-96.62)
+W (1399) wifi:(TB)WDEV_PWR_TB_MCS0:19
+W (1409) wifi:(TB)WDEV_PWR_TB_MCS1:19
+W (1409) wifi:(TB)WDEV_PWR_TB_MCS2:19
+W (1409) wifi:(TB)WDEV_PWR_TB_MCS3:19
+W (1419) wifi:(TB)WDEV_PWR_TB_MCS4:19
+W (1419) wifi:(TB)WDEV_PWR_TB_MCS5:19
+W (1419) wifi:(TB)WDEV_PWR_TB_MCS6:18
+W (1429) wifi:(TB)WDEV_PWR_TB_MCS7:18
+W (1429) wifi:(TB)WDEV_PWR_TB_MCS8:17
+W (1429) wifi:(TB)WDEV_PWR_TB_MCS9:15
+W (1439) wifi:(TB)WDEV_PWR_TB_MCS10:15
+W (1439) wifi:(TB)WDEV_PWR_TB_MCS11:15
+I (1449) wifi:11ax coex: WDEVAX_PTI0(0x55777555), WDEVAX_PTI1(0x00003377).
+
+I (1449) wifi:mode : sta (60:55:f9:f7:02:34)
+I (1459) wifi:enable tsf
+I (1459) chip[DL]: Posting ESPSystemEvent: Wifi Event with eventId : 43
+W (1459) wifi:Haven't to connect to a suitable AP now!
+I (1469) chip[DL]: Attempting to connect WiFi station interface
+I (1479) chip[DL]: WiFi station state change: NotConnected -> Connecting
+W (1479) wifi:Haven't to connect to a suitable AP now!
+E (1489) chip[DL]: Failed to get configured network when updating network status: Error ESP32:0x0500300F
+I (1499) chip[DL]: Done driving station state, nothing else to do...
+I (1499) chip[SVR]: Initializing subscription resumption storage...
+I (1509) chip[SVR]: Server initializing...
+I (1509) chip[TS]: Last Known Good Time: 2025-05-05T12:15:12
+I (1519) chip[FP]: Fabric index 0x1 was retrieved from storage. Compressed FabricId 0x016B47F377E5FE0B, FabricId 0x00000000B30BA88F, NodeId 0x000000006E9747C6, VendorId 0x1349
+I (1529) chip[FP]: Fabric index 0x2 was retrieved from storage. Compressed FabricId 0x7D79D89ACC7FD7E2, FabricId 0x0000000000000002, NodeId 0x00000000F0E07F62, VendorId 0x1384
+I (1549) chip[FP]: Fabric index 0x3 was retrieved from storage. Compressed FabricId 0xFD63765C7964F8DF, FabricId 0x0000000000000002, NodeId 0x0000000000000048, VendorId 0x134B
+I (1559) chip[DMG]: AccessControl: initializing
+I (1569) chip[DMG]: Examples::AccessControlDelegate::Init
+I (1569) chip[DMG]: AccessControl: setting
+I (1579) chip[DMG]: DefaultAclStorage: initializing
+I (1579) chip[DMG]: DefaultAclStorage: 4 entries loaded
+I (1589) chip[SVR]: WARNING: mTestEventTriggerDelegate is null
+I (1509) wifi:(he)max.RxAMPDULenExponentExtension:3, max.RxAMPDUpre-EOFpaddingBytes:8388607(0x7fffff)
+I (1609) wifi:(mac)omc_ul_mu_data_disable_rx:1
+I (1609) wifi:(phy)ppe_thresholds_present:1, nominal_packet_padding:0
+I (1609) wifi:(phy)dcm tx(constellation:0, nss:0), dcm rx(constellation:1, nss:0)
+I (1619) wifi:(phy)rx_mcs_map:0xfffa, tx_mcs_map:0xfffa, stbc_tx:0, bfmer(su:1, mu:1), ldpc:1, max_rate:172
+I (1629) wifi:(phy)nsts:2, ru_index_bitmap:0xf(242:1, 484:1, 996:1, 2*996:1)
+I (1629) wifi:(phy)threshold_bits:48, nsts_num:2, ru_num:4, he_cap->len:29, ppe_threshold_len:7(6,11,4)
+I (1639) wifi:(ppe)RU242, NSTS0, PPE16:0, PPE8:7, nominal_packet_padding:2
+I (1649) wifi:(opr)len:7, TWT Required:0, VHT Opr Info Present:0, 6GHz Opr Info Present:0, Co-Hosted BSS:0(max_indicator:0), Basic MCS and NSS:0xfffc
+I (1659) wifi:(opr)len:7, Default PE Duration:0, TXOP RTS Threshold:1023(0 us), ER-SU-Disable:0
+I (1669) wifi:(opr)len:7, BSS Color:27, disabled:0, Partial BSS Color:0
+I (1679) wifi:(he)max.RxAMPDULenExponentExtension:3, max.RxAMPDUpre-EOFpaddingBytes:8388607(0x7fffff)
+I (1689) wifi:(mac)omc_ul_mu_data_disable_rx:1
+I (1689) wifi:(phy)ppe_thresholds_present:1, nominal_packet_padding:0
+I (1699) wifi:(phy)dcm tx(constellation:0, nss:0), dcm rx(constellation:1, nss:0)
+I (1699) wifi:(phy)rx_mcs_map:0xfffa, tx_mcs_map:0xfffa, stbc_tx:0, bfmer(su:1, mu:1), ldpc:1, max_rate:172
+I (1709) wifi:(phy)nsts:2, ru_index_bitmap:0xf(242:1, 484:1, 996:1, 2*996:1)
+I (1719) wifi:(phy)threshold_bits:48, nsts_num:2, ru_num:4, he_cap->len:29, ppe_threshold_len:7(6,11,4)
+I (1729) wifi:(ppe)RU242, NSTS0, PPE16:0, PPE8:7, nominal_packet_padding:2
+I (1739) wifi:(opr)len:7, TWT Required:0, VHT Opr Info Present:0, 6GHz Opr Info Present:0, Co-Hosted BSS:0(max_indicator:0), Basic MCS and NSS:0xfffc
+I (1749) wifi:(opr)len:7, Default PE Duration:0, TXOP RTS Threshold:1023(0 us), ER-SU-Disable:0
+I (1759) wifi:(opr)len:7, BSS Color:26, disabled:0, Partial BSS Color:0
+I (1629) chip[ZCL]: Using ZAP configuration...
+I (1769) esp_matter_cluster: Cluster plugin init common callback
+I (1769) chip[DMG]: AccessControlCluster: initializing
+I (1779) chip[ZCL]: WRITE ERR: ep 0 clus 0x0000_0030 attr 0x0000_0000 not supported
+I (1789) chip[ZCL]: Initiating Admin Commissioning cluster.
+I (1789) chip[SVR]: Fabric already commissioned. Disabling BLE advertisement
+I (1799) chip[IN]: CASE Server enabling CASE session setups
+I (1799) chip[SVR]: Joining Multicast groups
+I (1809) chip[SVR]: Server Listening...
+I (1809) esp_matter_core: Dynamic endpoint 0 added
+I (1819) esp_matter_core: Dynamic endpoint 1 added
+I (1819) NimBLE: GAP procedure initiated: stop advertising.
+
+I (1829) wifi:new:<6,0>, old:<1,0>, ap:<255,255>, sta:<6,0>, prof:1, snd_ch_cfg:0x0
+I (1829) wifi:(connect)dot11_authmode:0x3, pairwise_cipher:0x3, group_cipher:0x3
+I (1839) wifi:state: init -> auth (0xb0)
+I (1499) chip[DL]: Posting ESPSystemEvent: Wifi Event with eventId : 2
+I (1849) chip[DL]: Posting ESPSystemEvent: Wifi Event with eventId : 43
+I (1859) esp_matter_attribute: ********** R : Endpoint 0x0001's Cluster 0x00000090's Attribute 0x00000005 is 0 **********
+I (1869) esp_matter_attribute: ********** W : Endpoint 0x0001's Cluster 0x00000090's Attribute 0x00000005 is 2000 **********
+I (1879) esp_matter_attribute: ********** R : Endpoint 0x0001's Cluster 0x00000090's Attribute 0x00000008 is 0 **********
+I (1889) esp_matter_attribute: ********** W : Endpoint 0x0001's Cluster 0x00000090's Attribute 0x00000008 is 20000 **********
+I (1899) esp_matter_attribute: ********** R : Endpoint 0x0001's Cluster 0x00000090's Attribute 0x00000004 is 0 **********
+I (1909) esp_matter_attribute: ********** W : Endpoint 0x0001's Cluster 0x00000090's Attribute 0x00000004 is 230000 **********
+I (1919) esp_matter_attribute: ********** R : Endpoint 0x0001's Cluster 0x00000090's Attribute 0x00000001 is 0 **********
+I (1929) esp_matter_attribute: ********** W : Endpoint 0x0001's Cluster 0x00000090's Attribute 0x00000001 is 3 **********
+E (1939) chip[DL]: Chip stack locking error at '/home/ludovic/esp-matter/connectedhomeip/connectedhomeip/src/app/reporting/reporting.cpp:33'. Code is unsafe/racyI (1949) wifi:state: auth -> assoc (0x0)
+
+E (1959) chip[-]: chipDie chipDie chipDie
+
+abort() was called at PC 0x4205476d on core 0
+--- 0x4205476d: chip::Platform::Internal::AssertChipStackLockedByCurrentThread(char const*, int) at /home/ludovic/esp-matter/examples/solar_power/build/esp-idf/chip/../../../../../connectedhomeip/connectedhomeip/config/esp32/third_party/connectedhomeip/src/lib/support/CodeUtils.h:484
+---  (inlined by) chipDie at /home/ludovic/esp-matter/examples/solar_power/build/esp-idf/chip/../../../../../connectedhomeip/connectedhomeip/config/esp32/third_party/connectedhomeip/src/lib/support/CodeUtils.h:494
+---  (inlined by) chip::Platform::Internal::AssertChipStackLockedByCurrentThread(char const*, int) at /home/ludovic/esp-matter/examples/solar_power/build/esp-idf/chip/../../../../../connectedhomeip/connectedhomeip/config/esp32/third_party/connectedhomeip/src/platform/LockTracker.cpp:36
+
+--- Stack dump detected
+Core  0 register dump:
+MEPC    : 0x40800862  RA      : 0x4080d5ee  SP      : 0x4083bdd0  GP      : 0x4081f534  
+--- 0x40800862: panic_abort at /home/ludovic/esp/esp-idf/components/esp_system/panic.c:482
+--- 0x4080d5ee: __ubsan_include at /home/ludovic/esp/esp-idf/components/esp_system/ubsan.c:311
+
+TP      : 0x4083c170  T0      : 0x37363534  T1      : 0x7271706f  T2      : 0x33323130  
+S0/FP   : 0x4083be0c  S1      : 0x4083be0c  A0      : 0x4083be0c  A1      : 0x4083bdee  
+A2      : 0x00000000  A3      : 0x4083be39  A4      : 0x00000001  A5      : 0x40837000  
+A6      : 0x00000000  A7      : 0x76757473  S2      : 0x4083bdf0  S3      : 0x40837000  
+S4      : 0x00000000  S5      : 0x00000000  S6      : 0x00000000  S7      : 0x00000000  
+S8      : 0x00000000  S9      : 0x00000000  S10     : 0x00000000  S11     : 0x00000000  
+T3      : 0x6e6d6c6b  T4      : 0x6a696867  T5      : 0x66656463  T6      : 0x62613938  
+MSTATUS : 0x00001881  MTVEC   : 0x40800001  MCAUSE  : 0x00000002  MTVAL   : 0x00000000  
+--- 0x40800001: _vector_table at /home/ludovic/esp/esp-idf/components/riscv/vectors_intc.S:54
+
+MHARTID : 0x00000000  
+
+
+--- Backtrace:
+
+
+panic_abort (details=details@entry=0x4083be0c "abor") at /home/ludovic/esp/esp-idf/components/esp_system/panic.c:482
+482	    asm("unimp");   // should be an invalid operation on RISC-V targets
+#0  panic_abort (details=details@entry=0x4083be0c "abor") at /home/ludovic/esp/esp-idf/components/esp_system/panic.c:482
+#1  0x4080d5ee in esp_system_abort (details=details@entry=0x4083be0c "abor") at /home/ludovic/esp/esp-idf/components/esp_system/port/esp_system_chip.c:87
+#2  0x4081463c in abort () at /home/ludovic/esp/esp-idf/components/newlib/abort.c:38
+#3  0x00000000 in ?? ()
+Backtrace stopped: frame did not save the PC
+
+
+
+ELF file SHA256: b1bd332b5
+
+Rebooting...
+ESP-ROM:esp32c6-20220919
+Build:Sep 19 2022
+rst:0xc (SW_CPU),boot:0x1d (SPI_FAST_FLASH_BOOT)
+Saved PC:0x4001975a
+--- 0x4001975a: software_reset_cpu in ROM
+
+SPIWP:0xee
+mode:DIO, clock div:2
+load:0x40875720,len:0x16b8
+load:0x4086c110,len:0xe90
+load:0x4086e610,len:0x3054
+entry 0x4086c11a
