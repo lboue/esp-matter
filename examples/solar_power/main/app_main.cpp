@@ -128,12 +128,16 @@ extern "C" void app_main()
     cluster::device_energy_management::feature::power_adjustment::add(device_energy_management_cluster);
 
     /* EEM 
+    cluster_t *electrical_power_measurement_cluster = cluster::get(endpoint, chip::app::Clusters::ElectricalPowerMeasurement::Id);
+
     electrical_energy_measurement::config_t econfig;
-    auto cumulative_energy_feature = electrical_energy_measurement::feature::cumulative_energy::get_id();
-    auto imported_energy_feature = electrical_energy_measurement::feature::imported_energy::get_id();
-    esp_matter::cluster_t *energy_cluster = electrical_energy_measurement::create(electrical_sensor_endpoint, &econfig, CLUSTER_FLAG_SERVER,
-        cumulative_energy_feature | imported_energy_feature);
+    auto cumulative_energy_feature = cluster::electrical_energy_measurement::feature::cumulative_energy::get_id();
+    //auto imported_energy_feature = cluster::electrical_energy_measurement::feature::imported_energy::get_id();
+    auto exported_energy_feature = cluster::electrical_energy_measurement::feature::exported_energy::get_id();
+    esp_matter::cluster_t *energy_cluster = cluster::electrical_energy_measurement::create(endpoint, &econfig, CLUSTER_FLAG_SERVER,
+        cumulative_energy_feature | exported_energy_feature);
     */
+
 
     /*
     // "Temperature Measurement", "Refrigerator and Temperature Controlled Cabinet Mode Select" are optional cluster for temperature_controlled_cabinet device type so we are not adding them by default.
@@ -188,6 +192,8 @@ extern "C" void app_main()
     esp_matter::attribute::update(solar_power_endpoint_id, ElectricalPowerMeasurement::Id, ElectricalPowerMeasurement::Attributes::Voltage::Id, &voltage_val_t);
     esp_matter::attribute::update(solar_power_endpoint_id, ElectricalPowerMeasurement::Id, ElectricalPowerMeasurement::Attributes::NumberOfMeasurementTypes::Id, &mes_types_val_t);
 
+    // esp_matter::attribute::update(solar_power_endpoint_id, ElectricalEnergyMeasurement::Id, ElectricalEnergyMeasurement::Attributes::CumulativeEnergyExported::Id, &mes_types_val_t);
+
     // SetMeasurementAccuracy
 	auto mask = chip::BitMask<chip::app::Clusters::ElectricalEnergyMeasurement::Feature>(
         chip::app::Clusters::ElectricalEnergyMeasurement::Feature::kCumulativeEnergy, 
@@ -221,13 +227,13 @@ extern "C" void app_main()
 
 	measurementAccuracy.accuracyRanges = {sMeasurementAccuracyRange};
 
-    /*
+    
     auto err_accu = chip::app::Clusters::ElectricalEnergyMeasurement::SetMeasurementAccuracy(solar_power_endpoint_id, measurementAccuracy);
 	if (chip::ChipError::IsSuccess(err_accu) == false) { 
 		//logger.E("SetMeasurementAccuracy ERR %u %u", err_accu.GetRange(), err_accu.GetValue()); // Change to log_e or your own logger
         ESP_LOGI(TAG, "SetMeasurementAccuracy ERR");
 	}
-
+    /*
     int energy_value = 10000;
     int endpoint_id = 1;
     chip::app::Clusters::ElectricalEnergyMeasurement::Structs::EnergyMeasurementStruct::Type measurement;
