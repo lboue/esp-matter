@@ -1,0 +1,55 @@
+
+./chip-tool descriptor read device-type-list 101 1 | grep TOO
+[1746544542.582] [578276:578280] [TOO] Sending command to node 0x65
+[1746544543.286] [578276:578280] [TOO] Sending ReadAttribute to:
+[1746544543.286] [578276:578280] [TOO] 	cluster 0x0000_001D, attribute: 0x0000_0000, endpoint 1
+[1746544543.352] [578276:578280] [TOO] Endpoint: 1 Cluster: 0x0000_001D Attribute 0x0000_0000 DataVersion: 2133898785
+[1746544543.352] [578276:578280] [TOO]   DeviceTypeList: 4 entries
+[1746544543.352] [578276:578280] [TOO]     [1]: {
+[1746544543.352] [578276:578280] [TOO]       DeviceType: 24 (Battery Storage)
+[1746544543.352] [578276:578280] [TOO]       Revision: 1
+[1746544543.352] [578276:578280] [TOO]      }
+[1746544543.352] [578276:578280] [TOO]     [2]: {
+[1746544543.352] [578276:578280] [TOO]       DeviceType: 17 (Power Source)
+[1746544543.352] [578276:578280] [TOO]       Revision: 1
+[1746544543.352] [578276:578280] [TOO]      }
+[1746544543.352] [578276:578280] [TOO]     [3]: {
+[1746544543.352] [578276:578280] [TOO]       DeviceType: 1296 (Electrical Sensor)
+[1746544543.352] [578276:578280] [TOO]       Revision: 1
+[1746544543.352] [578276:578280] [TOO]      }
+[1746544543.352] [578276:578280] [TOO]     [4]: {
+[1746544543.352] [578276:578280] [TOO]       DeviceType: 1293 (Device Energy Management)
+[1746544543.352] [578276:578280] [TOO]       Revision: 2
+[1746544543.352] [578276:578280] [TOO]      }
+
+./chip-tool electricalenergymeasurement read feature-map 101 1 | grep DMG
+[1746544594.235] [578604:578604] [DMG] Ember attribute persistence requires setting up
+[1746544594.767] [578604:578607] [DMG] SendReadRequest ReadClient[0x725e6000fe40]: Sending Read Request
+[1746544594.767] [578604:578607] [DMG] 0 data version filters provided, 0 not relevant, 0 encoded, 0 skipped due to lack of space
+[1746544594.767] [578604:578607] [DMG] MoveToState ReadClient[0x725e6000fe40]: Moving to [AwaitingIn]
+[1746544594.855] [578604:578607] [DMG] ReportDataMessage =
+[1746544594.855] [578604:578607] [DMG] {
+[1746544594.855] [578604:578607] [DMG] 	AttributeReportIBs =
+[1746544594.855] [578604:578607] [DMG] 	[
+[1746544594.855] [578604:578607] [DMG] 		AttributeReportIB =
+[1746544594.855] [578604:578607] [DMG] 		{
+[1746544594.855] [578604:578607] [DMG] 			AttributeDataIB =
+[1746544594.855] [578604:578607] [DMG] 			{
+[1746544594.855] [578604:578607] [DMG] 				DataVersion = 0xf701e911,
+[1746544594.855] [578604:578607] [DMG] 				AttributePathIB =
+[1746544594.855] [578604:578607] [DMG] 				{
+[1746544594.855] [578604:578607] [DMG] 					Endpoint = 0x1,
+[1746544594.855] [578604:578607] [DMG] 					Cluster = 0x91,
+[1746544594.856] [578604:578607] [DMG] 					Attribute = 0x0000_FFFC,
+[1746544594.856] [578604:578607] [DMG] 				}
+[1746544594.856] [578604:578607] [DMG] 					
+[1746544594.856] [578604:578607] [DMG] 				Data = 6 (unsigned), 
+[1746544594.856] [578604:578607] [DMG] 			},
+[1746544594.856] [578604:578607] [DMG] 			
+[1746544594.856] [578604:578607] [DMG] 		},
+[1746544594.856] [578604:578607] [DMG] 		
+[1746544594.856] [578604:578607] [DMG] 	],
+[1746544594.856] [578604:578607] [DMG] 	
+[1746544594.856] [578604:578607] [DMG] 	SuppressResponse = true, 
+[1746544594.856] [578604:578607] [DMG] 	InteractionModelRevision = 12
+[1746544594.856] [578604:578607] [DMG] }
