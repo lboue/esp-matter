@@ -127,17 +127,23 @@ extern "C" void app_main()
     cluster_t *device_energy_management_cluster = cluster::get(endpoint, chip::app::Clusters::DeviceEnergyManagement::Id);
     cluster::device_energy_management::feature::power_adjustment::add(device_energy_management_cluster);
 
-    /* EEM 
-    cluster_t *electrical_power_measurement_cluster = cluster::get(endpoint, chip::app::Clusters::ElectricalPowerMeasurement::Id);
+    /* EEM */
+    //cluster_t *electrical_power_measurement_cluster = cluster::get(endpoint, chip::app::Clusters::ElectricalPowerMeasurement::Id);
+    cluster::electrical_energy_measurement::config_t electrical_energy_measurement_config;
 
-    electrical_energy_measurement::config_t econfig;
     auto cumulative_energy_feature = cluster::electrical_energy_measurement::feature::cumulative_energy::get_id();
     //auto imported_energy_feature = cluster::electrical_energy_measurement::feature::imported_energy::get_id();
     auto exported_energy_feature = cluster::electrical_energy_measurement::feature::exported_energy::get_id();
-    esp_matter::cluster_t *energy_cluster = cluster::electrical_energy_measurement::create(endpoint, &econfig, CLUSTER_FLAG_SERVER,
-        cumulative_energy_feature | exported_energy_feature);
-    */
+    // esp_matter::cluster_t *energy_cluster = cluster::electrical_energy_measurement::create(endpoint, &electrical_energy_measurement_config, CLUSTER_FLAG_SERVER,
+    //    cumulative_energy_feature | exported_energy_feature);
 
+    // Activate features
+    cluster_t *electrical_energy_measurement_cluster = cluster::get(endpoint, chip::app::Clusters::ElectricalEnergyMeasurement::Id);
+
+    // cluster::electrical_energy_measurement::attribute::create_cumulative_energy_exported(electrical_energy_measurement_cluster, active_power, active_power);
+
+    cluster::electrical_energy_measurement::feature::cumulative_energy::add(electrical_energy_measurement_cluster);
+    cluster::electrical_energy_measurement::feature::exported_energy::add(electrical_energy_measurement_cluster);
 
     /*
     // "Temperature Measurement", "Refrigerator and Temperature Controlled Cabinet Mode Select" are optional cluster for temperature_controlled_cabinet device type so we are not adding them by default.
@@ -197,10 +203,10 @@ extern "C" void app_main()
     // SetMeasurementAccuracy
 	auto mask = chip::BitMask<chip::app::Clusters::ElectricalEnergyMeasurement::Feature>(
         chip::app::Clusters::ElectricalEnergyMeasurement::Feature::kCumulativeEnergy, 
-        chip::app::Clusters::ElectricalEnergyMeasurement::Feature::kImportedEnergy);
+        chip::app::Clusters::ElectricalEnergyMeasurement::Feature::kExportedEnergy);
 	auto optionalmask = chip::BitMask<chip::app::Clusters::ElectricalEnergyMeasurement::OptionalAttributes>(
         chip::app::Clusters::ElectricalEnergyMeasurement::OptionalAttributes::kOptionalAttributeCumulativeEnergyReset);
-	auto energyMeasurementAccess = new chip::app::Clusters::ElectricalEnergyMeasurement::ElectricalEnergyMeasurementAttrAccess(mask,optionalmask);
+	auto energyMeasurementAccess = new chip::app::Clusters::ElectricalEnergyMeasurement::ElectricalEnergyMeasurementAttrAccess(mask, optionalmask);
 
 	auto initerr = energyMeasurementAccess->Init();
 	if (chip::ChipError::IsSuccess(initerr) == false) {
@@ -233,21 +239,23 @@ extern "C" void app_main()
 		//logger.E("SetMeasurementAccuracy ERR %u %u", err_accu.GetRange(), err_accu.GetValue()); // Change to log_e or your own logger
         ESP_LOGI(TAG, "SetMeasurementAccuracy ERR");
 	}
+
+    /* Update CumulativeEnergy */
+    int energy_value = 10000;
+    //int endpoint_id = 1;
+    
+    chip::app::Clusters::ElectricalEnergyMeasurement::Structs::EnergyMeasurementStruct::Type energyExported;
+    energyExported.startTimestamp.SetValue(1746380384); // Change to your marked start EPOCH time of energy
+    energyExported.endTimestamp.SetValue(1746386384); // Change to your own API to get EPOCH time (Or use systime APIs)
+    energyExported.energy = energy_value;
+    
+    // NotifyCumulativeEnergyMeasured(aEndpointId, MakeOptional(energyImported), MakeOptional(energyExported))
+    auto success = chip::app::Clusters::ElectricalEnergyMeasurement::NotifyCumulativeEnergyMeasured(solar_power_endpoint_id, 
+                   {},
+                   chip::Optional<chip::app::Clusters::ElectricalEnergyMeasurement::Structs::EnergyMeasurementStruct::Type> (energyExported));
+    ESP_LOGI(TAG, "NotifyCumulativeEnergyMeasured()");
     lock::chip_stack_unlock();
 
-    /*
-    int energy_value = 10000;
-    int endpoint_id = 1;
-    chip::app::Clusters::ElectricalEnergyMeasurement::Structs::EnergyMeasurementStruct::Type measurement;
-    measurement.startTimestamp.SetValue(1746380384); // Change to your marked start EPOCH time of energy
-    measurement.endTimestamp.SetValue(1746386384); // Change to your own API to get EPOCH time (Or use systime APIs)
-    measurement.energy = energy_value;
-    
-    chip::DeviceLayer::StackLock lock;
-    auto success = chip::app::Clusters::ElectricalEnergyMeasurement::NotifyCumulativeEnergyMeasured(solar_power_endpoint_id, {},
-                   chip::Optional<chip::app::Clusters::ElectricalEnergyMeasurement::Structs::EnergyMeasurementStruct::Type> (measurement));
-    ESP_LOGI(TAG, "NotifyCumulativeEnergyMeasured()");
-    */
 
 #if CONFIG_ENABLE_CHIP_SHELL
     esp_matter::console::diagnostics_register_commands();
