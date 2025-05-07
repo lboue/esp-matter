@@ -29,6 +29,8 @@ static uint16_t solar_power_endpoint_id = 0;
 using namespace esp_matter;
 using namespace esp_matter::attribute;
 using namespace esp_matter::endpoint;
+using namespace chip;
+using namespace chip::app;
 using namespace chip::app::Clusters;
 using namespace chip::app::Clusters::ElectricalEnergyMeasurement;
 using namespace chip::app::Clusters::ElectricalEnergyMeasurement::Attributes;
@@ -111,16 +113,12 @@ extern "C" void app_main()
     node_t *node = node::create(&node_config, app_attribute_update_cb, app_identification_cb);
     ABORT_APP_ON_FAILURE(node != nullptr, ESP_LOGE(TAG, "Failed to create Matter node"));
 
-    // "Identify", "Groups", "Scenes", "Refrigerator Mode Select" and "Refrigerator Alarm" are optional cluster for refrigerator device type so we are not adding them by default.
-    //refrigerator::config_t refrigerator_config;
     solar_power::config_t solar_power_config;
     endpoint_t *endpoint = solar_power::create(node, &solar_power_config, ENDPOINT_FLAG_NONE, NULL);
     ABORT_APP_ON_FAILURE(endpoint != nullptr, ESP_LOGE(TAG, "Failed to create refrigerator endpoint"));
 
     cluster_t *electrical_power_measurement_cluster = cluster::get(endpoint, chip::app::Clusters::ElectricalPowerMeasurement::Id);
     cluster::electrical_power_measurement::attribute::create_active_power(electrical_power_measurement_cluster, active_power);
-    // NumberOfMeasurementTypes
-    // cluster::electrical_power_measurement::attribute::create_number_of_measurement_types(electrical_power_measurement_cluster, 3);
 
     solar_power_endpoint_id = endpoint::get_id(endpoint);
     ESP_LOGI(TAG, "Solar Power created with endpoint_id %d", solar_power_endpoint_id);
@@ -132,50 +130,14 @@ extern "C" void app_main()
     cluster::device_energy_management::feature::power_adjustment::add(device_energy_management_cluster);
 
     /* EEM */
-    //cluster_t *electrical_power_measurement_cluster = cluster::get(endpoint, chip::app::Clusters::ElectricalPowerMeasurement::Id);
     cluster::electrical_energy_measurement::config_t electrical_energy_measurement_config;
 
-    auto cumulative_energy_feature = cluster::electrical_energy_measurement::feature::cumulative_energy::get_id();
-    //auto imported_energy_feature = cluster::electrical_energy_measurement::feature::imported_energy::get_id();
-    auto exported_energy_feature = cluster::electrical_energy_measurement::feature::exported_energy::get_id();
-    // esp_matter::cluster_t *energy_cluster = cluster::electrical_energy_measurement::create(endpoint, &electrical_energy_measurement_config, CLUSTER_FLAG_SERVER,
-    //    cumulative_energy_feature | exported_energy_feature);
-
     // Activate features
+    /*
     cluster_t *electrical_energy_measurement_cluster = cluster::get(endpoint, chip::app::Clusters::ElectricalEnergyMeasurement::Id);
-
-    // cluster::electrical_energy_measurement::attribute::create_cumulative_energy_exported(electrical_energy_measurement_cluster, active_power, active_power);
-
     cluster::electrical_energy_measurement::feature::cumulative_energy::add(electrical_energy_measurement_cluster);
     cluster::electrical_energy_measurement::feature::exported_energy::add(electrical_energy_measurement_cluster);
-
-    /*
-    // "Temperature Measurement", "Refrigerator and Temperature Controlled Cabinet Mode Select" are optional cluster for temperature_controlled_cabinet device type so we are not adding them by default.
-    temperature_controlled_cabinet::config_t temperature_controlled_cabinet_config;
-    endpoint_t *endpoint1 = temperature_controlled_cabinet::create(node, &temperature_controlled_cabinet_config, ENDPOINT_FLAG_NONE, NULL);
-    ABORT_APP_ON_FAILURE(endpoint1 != nullptr, ESP_LOGE(TAG, "Failed to create temperature controlled cabinet endpoint"));
-
-    esp_matter::cluster_t *cluster = esp_matter::cluster::get(endpoint1, chip::app::Clusters::TemperatureControl::Id);
-
-    // At lest one of temperature_number and temperature_level feature is mandatory.
-    cluster::temperature_control::feature::temperature_number::config_t temperature_number_config;
-    cluster::temperature_control::feature::temperature_number::add(cluster, &temperature_number_config);
-
-    temp_ctrl_endpoint_id = endpoint::get_id(endpoint1);
-    ESP_LOGI(TAG, "Temperature controlled cabinet created with endpoint_id %d", temp_ctrl_endpoint_id);
-
-    err = set_parent_endpoint(endpoint1, endpoint);
-    ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to set parent endpoint, err:%d", err));
     */
-
-    /* add device_energy_management device type to main EP */
-    //add_device_type(endpoint, endpoint::device_energy_management::get_device_type_id, endpoint::device_energy_management::get_device_type_version);
-
-    /* add electrical_sensor device type to main EP */
-    //add_device_type(endpoint, cluster::electrical_sensor::get_device_type_id, cluster::electrical_sensor::get_device_type_version);
-
-    /* add power_source device type to main EP */
-    //add_device_type(endpoint, cluster::power_source_device::get_device_type_id, cluster::power_source_device::get_device_type_version);
 
 #if CHIP_DEVICE_CONFIG_ENABLE_THREAD
     /* Set OpenThread platform config */
@@ -202,12 +164,10 @@ extern "C" void app_main()
     esp_matter::attribute::update(solar_power_endpoint_id, ElectricalPowerMeasurement::Id, ElectricalPowerMeasurement::Attributes::Voltage::Id, &voltage_val_t);
     esp_matter::attribute::update(solar_power_endpoint_id, ElectricalPowerMeasurement::Id, ElectricalPowerMeasurement::Attributes::NumberOfMeasurementTypes::Id, &mes_types_val_t);
 
-    // esp_matter::attribute::update(solar_power_endpoint_id, ElectricalEnergyMeasurement::Id, ElectricalEnergyMeasurement::Attributes::CumulativeEnergyExported::Id, &mes_types_val_t);
-
     // SetMeasurementAccuracy
 	auto mask = chip::BitMask<chip::app::Clusters::ElectricalEnergyMeasurement::Feature>(
-        chip::app::Clusters::ElectricalEnergyMeasurement::Feature::kCumulativeEnergy, 
-        chip::app::Clusters::ElectricalEnergyMeasurement::Feature::kExportedEnergy);
+                chip::app::Clusters::ElectricalEnergyMeasurement::Feature::kCumulativeEnergy, 
+                chip::app::Clusters::ElectricalEnergyMeasurement::Feature::kExportedEnergy);
 	auto optionalmask = chip::BitMask<chip::app::Clusters::ElectricalEnergyMeasurement::OptionalAttributes>(
         chip::app::Clusters::ElectricalEnergyMeasurement::OptionalAttributes::kOptionalAttributeCumulativeEnergyReset);
 	auto energyMeasurementAccess = new chip::app::Clusters::ElectricalEnergyMeasurement::ElectricalEnergyMeasurementAttrAccess(mask, optionalmask);
@@ -219,57 +179,144 @@ extern "C" void app_main()
 
 
     // https://github.com/project-chip/connectedhomeip/blob/master/examples/energy-management-app/energy-management-common/common/src/EnergyManagementAppCommonMain.cpp
- 
+    /* MeasurementAccuracyRangeStruct */
+    const MeasurementAccuracyRangeStruct::Type activePowerAccuracyRanges[] = {
+        // 2 - 5%, 3% Typ
+        {
+            .rangeMin       = -50'000'000, // -50kW
+            .rangeMax       = -10'000'000, // -10kW
+            .percentMax     = MakeOptional(static_cast<chip::Percent100ths>(5000)),
+            .percentMin     = MakeOptional(static_cast<chip::Percent100ths>(2000)),
+            .percentTypical = MakeOptional(static_cast<chip::Percent100ths>(3000)),
+        },
+        // 0.1 - 1%, 0.5% Typ
+        {
+            .rangeMin       = -9'999'999, // -9.999kW
+            .rangeMax       = 9'999'999,  //  9.999kW
+            .percentMax     = MakeOptional(static_cast<chip::Percent100ths>(1000)),
+            .percentMin     = MakeOptional(static_cast<chip::Percent100ths>(100)),
+            .percentTypical = MakeOptional(static_cast<chip::Percent100ths>(500)),
+        },
+        // 2 - 5%, 3% Typ
+        {
+            .rangeMin       = 10'000'000, // 10 kW
+            .rangeMax       = 50'000'000, // 50 kW
+            .percentMax     = MakeOptional(static_cast<chip::Percent100ths>(5000)),
+            .percentMin     = MakeOptional(static_cast<chip::Percent100ths>(2000)),
+            .percentTypical = MakeOptional(static_cast<chip::Percent100ths>(3000)),
+        },
+    };
+    
+    /* MeasurementAccuracyRangeStruct */
+    const MeasurementAccuracyRangeStruct::Type activeCurrentAccuracyRanges[] = {
+        // 2 - 5%, 3% Typ
+        {
+            .rangeMin       = -100'000, // -100A
+            .rangeMax       = -5'000,   // -5A
+            .percentMax     = MakeOptional(static_cast<chip::Percent100ths>(5000)),
+            .percentMin     = MakeOptional(static_cast<chip::Percent100ths>(2000)),
+            .percentTypical = MakeOptional(static_cast<chip::Percent100ths>(3000)),
+        },
+        // 0.1 - 1%, 0.5% Typ
+        {
+            .rangeMin       = -4'999, // -4.999A
+            .rangeMax       = 4'999,  //  4.999A
+            .percentMax     = MakeOptional(static_cast<chip::Percent100ths>(1000)),
+            .percentMin     = MakeOptional(static_cast<chip::Percent100ths>(100)),
+            .percentTypical = MakeOptional(static_cast<chip::Percent100ths>(500)),
+        },
+        // 2 - 5%, 3% Typ
+        {
+            .rangeMin       = 5'000,   // 5A
+            .rangeMax       = 100'000, // 100 A
+            .percentMax     = MakeOptional(static_cast<chip::Percent100ths>(5000)),
+            .percentMin     = MakeOptional(static_cast<chip::Percent100ths>(2000)),
+            .percentTypical = MakeOptional(static_cast<chip::Percent100ths>(3000)),
+        },
+    };
+    
+    /* MeasurementAccuracyRangeStruct */
+    const MeasurementAccuracyRangeStruct::Type voltageAccuracyRanges[] = {
+        // 2 - 5%, 3% Typ
+        {
+            .rangeMin       = -500'000, // -500V
+            .rangeMax       = -100'000, // -100V
+            .percentMax     = MakeOptional(static_cast<chip::Percent100ths>(5000)),
+            .percentMin     = MakeOptional(static_cast<chip::Percent100ths>(2000)),
+            .percentTypical = MakeOptional(static_cast<chip::Percent100ths>(3000)),
+        },
+        // 0.1 - 1%, 0.5% Typ
+        {
+            .rangeMin       = -99'999, // -99.999V
+            .rangeMax       = 99'999,  //  99.999V
+            .percentMax     = MakeOptional(static_cast<chip::Percent100ths>(1000)),
+            .percentMin     = MakeOptional(static_cast<chip::Percent100ths>(100)),
+            .percentTypical = MakeOptional(static_cast<chip::Percent100ths>(500)),
+        },
+        // 2 - 5%, 3% Typ
+        {
+            .rangeMin       = 100'000, // 100 V
+            .rangeMax       = 500'000, // 500 V
+            .percentMax     = MakeOptional(static_cast<chip::Percent100ths>(5000)),
+            .percentMin     = MakeOptional(static_cast<chip::Percent100ths>(2000)),
+            .percentTypical = MakeOptional(static_cast<chip::Percent100ths>(3000)),
+        }
+    };
+    
+    /* MeasurementAccuracyStruct */
+    static const Structs::MeasurementAccuracyStruct::Type kMeasurementAccuracies[] = {
+        {
+            .measurementType  = chip::app::Clusters::detail::MeasurementTypeEnum::kActivePower,
+            .measured         = true,
+            .minMeasuredValue = -50'000'000, // -50 kW
+            .maxMeasuredValue = 50'000'000,  //  50 kW
+            .accuracyRanges   = DataModel::List<const MeasurementAccuracyRangeStruct::Type>(activePowerAccuracyRanges),
+        },
+        {
+            .measurementType  = chip::app::Clusters::detail::MeasurementTypeEnum::kActiveCurrent,
+            .measured         = true,
+            .minMeasuredValue = -100'000, // -100A
+            .maxMeasuredValue = 100'000,  //  100A
+            .accuracyRanges   = DataModel::List<const MeasurementAccuracyRangeStruct::Type>(activeCurrentAccuracyRanges),
+        },
+        {
+            .measurementType  = chip::app::Clusters::detail::MeasurementTypeEnum::kVoltage,
+            .measured         = true,
+            .minMeasuredValue = -500'000, // -500V
+            .maxMeasuredValue = 500'000,  //  500V
+            .accuracyRanges   = DataModel::List<const MeasurementAccuracyRangeStruct::Type>(voltageAccuracyRanges),
+        },
+    };
 
-    /*
-    int max_energy = 100;
-	chip::app::Clusters::ElectricalEnergyMeasurement::Structs::MeasurementAccuracyStruct::Type measurementAccuracy;
-	static chip::app::Clusters::ElectricalEnergyMeasurement::Structs::MeasurementAccuracyRangeStruct::Type sMeasurementAccuracyRange;
-	measurementAccuracy.measured = true;
-	measurementAccuracy.measurementType = chip::app::Clusters::detail::MeasurementTypeEnum::kElectricalEnergy;
-	measurementAccuracy.maxMeasuredValue = max_energy;
-	measurementAccuracy.minMeasuredValue = 0;
+    // List[MeasurementAccuracyRangeStruct]
+    DataModel::List<const MeasurementAccuracyStruct::Type> kMeasurementAccuraciesList;
 
-	sMeasurementAccuracyRange.rangeMax = max_energy;
-	sMeasurementAccuracyRange.rangeMin = 0;
-	// sMeasurementAccuracyRange.percentMax.SetValue(energy_max_accuracy);
-	// sMeasurementAccuracyRange.percentMin.SetValue(energy_min_accuracy);
-	// sMeasurementAccuracyRange.percentTypical.SetValue(energy_typ_accuracy);
-	sMeasurementAccuracyRange.fixedMax.SetValue(187650443764698);
-	sMeasurementAccuracyRange.fixedMin.SetValue(187650443764696);
-	sMeasurementAccuracyRange.fixedTypical.SetValue(0);
-
-	measurementAccuracy.accuracyRanges = {sMeasurementAccuracyRange};
-    */
-
-
-    // https://github.com/project-chip/connectedhomeip/blob/master/examples/dishwasher-app/silabs/src/ElectricalEnergyMeasurementInstance.cpp
     // Example of setting CumulativeEnergyReset structure - for now set these to 0
     // but the manufacturer may want to store these in non volatile storage for timestamp (based on epoch_s)
     // Create an accuracy entry which is between +/-0.5 and +/- 5% across the range of all possible energy readings
+    // https://github.com/project-chip/connectedhomeip/blob/master/examples/energy-management-app/energy-management-common/common/src/EnergyManagementAppCommonMain.cpp
     static const MeasurementAccuracyRangeStruct::Type kEnergyAccuracyRanges[] = {
         { 
             .rangeMin   = 0,
             .rangeMax   = 1'000'000'000'000'000, // 1 million Mwh
-            .percentMax = chip::MakeOptional(static_cast<chip::Percent100ths>(500)),
-            .percentMin = chip::MakeOptional(static_cast<chip::Percent100ths>(50)) 
+            .percentMax = MakeOptional(static_cast<chip::Percent100ths>(500)),
+            .percentMin = MakeOptional(static_cast<chip::Percent100ths>(50)) 
         }
     };
 
-    static const MeasurementAccuracyStruct::Type kAccuracy = {
+    static const MeasurementAccuracyStruct::Type kEnergyMeasurementAccuracy = {
         .measurementType  = chip::app::Clusters::detail::MeasurementTypeEnum::kElectricalEnergy,
         .measured         = true, // this should be made true in an implementation where a real metering device is used.
         .minMeasuredValue = 0,
         .maxMeasuredValue = 1'000'000'000'000'000, // 1 million Mwh
-        .accuracyRanges = List<const MeasurementAccuracyRangeStruct::Type>(kEnergyAccuracyRanges)
+        .accuracyRanges = DataModel::List<const MeasurementAccuracyRangeStruct::Type>(kEnergyAccuracyRanges)
     };
 
     lock::chip_stack_lock(portMAX_DELAY);
-    // auto err_accu = chip::app::Clusters::ElectricalEnergyMeasurement::SetMeasurementAccuracy(solar_power_endpoint_id, measurementAccuracy);
-    auto err_accu = chip::app::Clusters::ElectricalEnergyMeasurement::SetMeasurementAccuracy(solar_power_endpoint_id, kAccuracy);
+    /* ElectricalEnergyMeasurement::SetMeasurementAccuracy */
+    auto err_accu = chip::app::Clusters::ElectricalEnergyMeasurement::SetMeasurementAccuracy(solar_power_endpoint_id, kEnergyMeasurementAccuracy);
 	if (chip::ChipError::IsSuccess(err_accu) == false) { 
-		//logger.E("SetMeasurementAccuracy ERR %u %u", err_accu.GetRange(), err_accu.GetValue()); // Change to log_e or your own logger
-        ESP_LOGI(TAG, "SetMeasurementAccuracy ERR");
+        ESP_LOGI(TAG, "ElectricalEnergyMeasurement SetMeasurementAccuracy ERR");
 	}
 
     /* Update CumulativeEnergy */
