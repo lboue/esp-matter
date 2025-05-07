@@ -24,7 +24,6 @@
 
 static const char *TAG = "app_main";
 static uint16_t solar_power_endpoint_id = 0;
-//static uint16_t temp_ctrl_endpoint_id = 0;
 
 using namespace esp_matter;
 using namespace esp_matter::attribute;
@@ -128,16 +127,6 @@ extern "C" void app_main()
 
     cluster_t *device_energy_management_cluster = cluster::get(endpoint, chip::app::Clusters::DeviceEnergyManagement::Id);
     cluster::device_energy_management::feature::power_adjustment::add(device_energy_management_cluster);
-
-    /* EEM */
-    cluster::electrical_energy_measurement::config_t electrical_energy_measurement_config;
-
-    // Activate features
-    /*
-    cluster_t *electrical_energy_measurement_cluster = cluster::get(endpoint, chip::app::Clusters::ElectricalEnergyMeasurement::Id);
-    cluster::electrical_energy_measurement::feature::cumulative_energy::add(electrical_energy_measurement_cluster);
-    cluster::electrical_energy_measurement::feature::exported_energy::add(electrical_energy_measurement_cluster);
-    */
 
 #if CHIP_DEVICE_CONFIG_ENABLE_THREAD
     /* Set OpenThread platform config */
