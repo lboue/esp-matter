@@ -30,6 +30,10 @@ using namespace esp_matter;
 using namespace esp_matter::attribute;
 using namespace esp_matter::endpoint;
 using namespace chip::app::Clusters;
+using namespace chip::app::Clusters::ElectricalEnergyMeasurement;
+using namespace chip::app::Clusters::ElectricalEnergyMeasurement::Attributes;
+using namespace chip::app::Clusters::ElectricalEnergyMeasurement::Structs;
+using namespace chip::app::DataModel;
 
 static chip::app::Clusters::TemperatureControl::AppSupportedTemperatureLevelsDelegate sAppSupportedTemperatureLevelsDelegate;
 static void app_event_cb(const ChipDeviceEvent *event, intptr_t arg)
@@ -212,11 +216,15 @@ extern "C" void app_main()
 	if (chip::ChipError::IsSuccess(initerr) == false) {
 		ESP_LOGE(TAG, "energyMeasurementAccess->Init() ERR");
 	}
-	
+
+
+    // https://github.com/project-chip/connectedhomeip/blob/master/examples/energy-management-app/energy-management-common/common/src/EnergyManagementAppCommonMain.cpp
+ 
+
+    /*
     int max_energy = 100;
 	chip::app::Clusters::ElectricalEnergyMeasurement::Structs::MeasurementAccuracyStruct::Type measurementAccuracy;
 	static chip::app::Clusters::ElectricalEnergyMeasurement::Structs::MeasurementAccuracyRangeStruct::Type sMeasurementAccuracyRange;
-
 	measurementAccuracy.measured = true;
 	measurementAccuracy.measurementType = chip::app::Clusters::detail::MeasurementTypeEnum::kElectricalEnergy;
 	measurementAccuracy.maxMeasuredValue = max_energy;
@@ -232,9 +240,33 @@ extern "C" void app_main()
 	sMeasurementAccuracyRange.fixedTypical.SetValue(0);
 
 	measurementAccuracy.accuracyRanges = {sMeasurementAccuracyRange};
+    */
+
+
+    // https://github.com/project-chip/connectedhomeip/blob/master/examples/dishwasher-app/silabs/src/ElectricalEnergyMeasurementInstance.cpp
+    // Example of setting CumulativeEnergyReset structure - for now set these to 0
+    // but the manufacturer may want to store these in non volatile storage for timestamp (based on epoch_s)
+    // Create an accuracy entry which is between +/-0.5 and +/- 5% across the range of all possible energy readings
+    static const MeasurementAccuracyRangeStruct::Type kEnergyAccuracyRanges[] = {
+        { 
+            .rangeMin   = 0,
+            .rangeMax   = 1'000'000'000'000'000, // 1 million Mwh
+            .percentMax = chip::MakeOptional(static_cast<chip::Percent100ths>(500)),
+            .percentMin = chip::MakeOptional(static_cast<chip::Percent100ths>(50)) 
+        }
+    };
+
+    static const MeasurementAccuracyStruct::Type kAccuracy = {
+        .measurementType  = chip::app::Clusters::detail::MeasurementTypeEnum::kElectricalEnergy,
+        .measured         = true, // this should be made true in an implementation where a real metering device is used.
+        .minMeasuredValue = 0,
+        .maxMeasuredValue = 1'000'000'000'000'000, // 1 million Mwh
+        .accuracyRanges = List<const MeasurementAccuracyRangeStruct::Type>(kEnergyAccuracyRanges)
+    };
 
     lock::chip_stack_lock(portMAX_DELAY);
-    auto err_accu = chip::app::Clusters::ElectricalEnergyMeasurement::SetMeasurementAccuracy(solar_power_endpoint_id, measurementAccuracy);
+    // auto err_accu = chip::app::Clusters::ElectricalEnergyMeasurement::SetMeasurementAccuracy(solar_power_endpoint_id, measurementAccuracy);
+    auto err_accu = chip::app::Clusters::ElectricalEnergyMeasurement::SetMeasurementAccuracy(solar_power_endpoint_id, kAccuracy);
 	if (chip::ChipError::IsSuccess(err_accu) == false) { 
 		//logger.E("SetMeasurementAccuracy ERR %u %u", err_accu.GetRange(), err_accu.GetValue()); // Change to log_e or your own logger
         ESP_LOGI(TAG, "SetMeasurementAccuracy ERR");
