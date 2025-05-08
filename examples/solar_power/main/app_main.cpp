@@ -114,8 +114,8 @@ extern "C" void app_main()
     ABORT_APP_ON_FAILURE(node != nullptr, ESP_LOGE(TAG, "Failed to create Matter node"));
 
     solar_power::config_t solar_power_config;
-    static chip::app::Clusters::ElectricalPowerMeasurement::Delegate epm_delegate;
-    solar_power_config.delegate = epm_delegate;
+    static chip::app::Clusters::ElectricalPowerMeasurement::ElectricalPowerMeasurementDelegate epm_delegate;
+    solar_power_config.electrical_sensor.delegate = &epm_delegate;
     endpoint_t *endpoint = solar_power::create(node, &solar_power_config, ENDPOINT_FLAG_NONE, NULL);
     ABORT_APP_ON_FAILURE(endpoint != nullptr, ESP_LOGE(TAG, "Failed to create solar power endpoint"));
 
