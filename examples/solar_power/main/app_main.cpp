@@ -25,6 +25,7 @@
 
 static const char *TAG = "app_main";
 static uint16_t solar_power_endpoint_id = 0;
+//static uint16_t temp_ctrl_endpoint_id = 0;
 
 using namespace esp_matter;
 using namespace esp_matter::attribute;
@@ -156,7 +157,7 @@ extern "C" void app_main()
     esp_matter::attribute::update(solar_power_endpoint_id, ElectricalPowerMeasurement::Id, ElectricalPowerMeasurement::Attributes::ActivePower::Id, &active_power_val_t);
     esp_matter::attribute::update(solar_power_endpoint_id, ElectricalPowerMeasurement::Id, ElectricalPowerMeasurement::Attributes::Voltage::Id, &voltage_val_t);
     esp_matter::attribute::update(solar_power_endpoint_id, ElectricalPowerMeasurement::Id, ElectricalPowerMeasurement::Attributes::NumberOfMeasurementTypes::Id, &mes_types_val_t);
-
+ 
     // SetMeasurementAccuracy
 	auto mask = chip::BitMask<chip::app::Clusters::ElectricalEnergyMeasurement::Feature>(
                 chip::app::Clusters::ElectricalEnergyMeasurement::Feature::kCumulativeEnergy, 
