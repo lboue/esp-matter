@@ -1,0 +1,7 @@
+home/ludovic/esp-matter/examples/solar_power/main/app_main.cpp: In function 'void app_main()':
+/home/ludovic/esp-matter/examples/solar_power/main/app_main.cpp:118:61: error: 'ElectricalPowerMeasurementDelegate' in namespace 'chip::app::Clusters::ElectricalPowerMeasurement' does not name a type
+  118 |     static chip::app::Clusters::ElectricalPowerMeasurement::ElectricalPowerMeasurementDelegate epm_delegate;
+      |                                                             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/ludovic/esp-matter/examples/solar_power/main/app_main.cpp:119:83: error: 'epm_delegate' was not declared in this scope
+  119 |     solar_power_config.electrical_sensor.electrical_power_measurement.delegate = &epm_delegate;
+      |                                                                                   ^~~~~~~~~~~~
