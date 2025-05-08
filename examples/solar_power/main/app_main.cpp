@@ -17,6 +17,7 @@
 #include <app_priv.h>
 #include <app_reset.h>
 #include <app/clusters/electrical-energy-measurement-server/electrical-energy-measurement-server.h>
+#include <app/clusters/electrical-power-measurement-server/electrical-power-measurement-server.h>
 #include <static-supported-temperature-levels.h>
 #if CHIP_DEVICE_CONFIG_ENABLE_THREAD
 #include <platform/ESP32/OpenthreadLauncher.h>
@@ -113,8 +114,10 @@ extern "C" void app_main()
     ABORT_APP_ON_FAILURE(node != nullptr, ESP_LOGE(TAG, "Failed to create Matter node"));
 
     solar_power::config_t solar_power_config;
+    static chip::app::Clusters::ElectricalPowerMeasurement::Delegate epm_delegate;
+    solar_power_config.delegate = epm_delegate;
     endpoint_t *endpoint = solar_power::create(node, &solar_power_config, ENDPOINT_FLAG_NONE, NULL);
-    ABORT_APP_ON_FAILURE(endpoint != nullptr, ESP_LOGE(TAG, "Failed to create refrigerator endpoint"));
+    ABORT_APP_ON_FAILURE(endpoint != nullptr, ESP_LOGE(TAG, "Failed to create solar power endpoint"));
 
     cluster_t *electrical_power_measurement_cluster = cluster::get(endpoint, chip::app::Clusters::ElectricalPowerMeasurement::Id);
     cluster::electrical_power_measurement::attribute::create_active_power(electrical_power_measurement_cluster, active_power);
