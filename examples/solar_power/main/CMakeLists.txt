@@ -1,7 +1,6 @@
 set(SRC_LIST       app_driver.cpp
                    app_main.cpp
-                   ${MATTER_SDK_PATH}/examples/all-clusters-app/all-clusters-common/src/static-supported-temperature-levels.cpp
-                   ${MATTER_SDK_PATH}/examples/all-clusters-app/all-clusters-common/src/tcc-mode.cpp
+                   ${MATTER_SDK_PATH}/examples/energy-management-app/energy-management-common/energy-reporting/src/ElectricalPowerMeasurementDelegate.cpp
    )
 
 set(INCLUDE_DIRS_LIST   "${MATTER_SDK_PATH}/examples/all-clusters-app/all-clusters-common/include")
