@@ -1,0 +1,6 @@
+ (32439) esp_matter_attribute: ********** R : Endpoint 0x0001's Cluster 0x00000090's Attribute 0x0000FFFD is 1 **********
+E (32449) chip[DMG]: Fail to retrieve data, roll back and encode status on clusterId: 0x0000_0090, attributeId: 0x0000_0004err = 586
+E (32459) chip[DMG]: Fail to retrieve data, roll back and encode status on clusterId: 0x0000_0090, attributeId: 0x0000_0005err = 586
+I (32479) chip[EM]: <<< [E:28637r S:54525 M:25444143 (Ack:268435274)] (S) Msg TX from 0000000000000012 to 3:000000000001B669 [5A16] [UDP:[FE80::B63C:CA04:ABE:3AC0%st1]:32901] --- Type 0001:05 (IM:ReportData) (B:1187)
+I (32489) chip[EM]: ??1 [E:28637r S:54525 M:25444143] (S) Msg Retransmission to 3:000000000001B669 scheduled for 333ms from now [State:Active II:500 AI:300 AT:4000]
+I (32509) chip[EM]: >>> [E:28637r S:54525 M:268435275 (Ack:25444143)] (S) Msg RX from 3:000000000001B669 [5A16] to 0000000000000012 --- Type 0001:01 (IM:StatusResponse) (B:42)
