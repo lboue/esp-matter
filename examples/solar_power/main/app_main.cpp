@@ -158,7 +158,12 @@ extern "C" void app_main()
     esp_matter::attribute::update(solar_power_endpoint_id, ElectricalPowerMeasurement::Id, ElectricalPowerMeasurement::Attributes::ActivePower::Id, &active_power_val_t);
     esp_matter::attribute::update(solar_power_endpoint_id, ElectricalPowerMeasurement::Id, ElectricalPowerMeasurement::Attributes::Voltage::Id, &voltage_val_t);
     esp_matter::attribute::update(solar_power_endpoint_id, ElectricalPowerMeasurement::Id, ElectricalPowerMeasurement::Attributes::NumberOfMeasurementTypes::Id, &mes_types_val_t);
- 
+    /*
+        epm_delegate->SetVoltage(MakeNullable(Voltage);
+        epm_delegate->SetActiveCurrent(MakeNullable(ActiveCurrent);
+	epm_delegate->SetActivePower(MakeNullable(ActivePower);
+    */
+	
     // SetMeasurementAccuracy
 	auto mask = chip::BitMask<chip::app::Clusters::ElectricalEnergyMeasurement::Feature>(
                 chip::app::Clusters::ElectricalEnergyMeasurement::Feature::kCumulativeEnergy, 
