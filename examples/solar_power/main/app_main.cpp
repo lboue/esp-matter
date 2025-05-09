@@ -16,9 +16,10 @@
 #include <common_macros.h>
 #include <app_priv.h>
 #include <app_reset.h>
+#include <ElectricalPowerMeasurementDelegate.h>
 #include <app/clusters/electrical-energy-measurement-server/electrical-energy-measurement-server.h>
 #include <app/clusters/electrical-power-measurement-server/electrical-power-measurement-server.h>
-#include <static-supported-temperature-levels.h>
+//#include <static-supported-temperature-levels.h>
 #if CHIP_DEVICE_CONFIG_ENABLE_THREAD
 #include <platform/ESP32/OpenthreadLauncher.h>
 #endif
@@ -38,7 +39,7 @@ using namespace chip::app::Clusters::ElectricalEnergyMeasurement::Attributes;
 using namespace chip::app::Clusters::ElectricalEnergyMeasurement::Structs;
 using namespace chip::app::DataModel;
 
-static chip::app::Clusters::TemperatureControl::AppSupportedTemperatureLevelsDelegate sAppSupportedTemperatureLevelsDelegate;
+// static chip::app::Clusters::TemperatureControl::AppSupportedTemperatureLevelsDelegate sAppSupportedTemperatureLevelsDelegate;
 static void app_event_cb(const ChipDeviceEvent *event, intptr_t arg)
 {
     switch (event->Type) {
