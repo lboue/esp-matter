@@ -38,12 +38,46 @@
 // External variables for electrical sensor initialization
 bool g_electrical_sensor_created = false;
 
+static const char *TAG = "esp_matter_console_helpers";
+
 // Global storage for CommodityPrice Instance (set by delegate init callback)
 static chip::app::Clusters::CommodityPrice::Instance* g_commodity_price_instance = nullptr;
+
+extern uint16_t app_endpoint_id;
 
 // Hook function called by the delegate init callback to store the instance
 extern "C" void commodity_price_instance_created_hook(chip::app::Clusters::CommodityPrice::Instance* instance) {
     g_commodity_price_instance = instance;
+
+    // Seed default tariff unit and current price as soon as the instance is available
+    if (instance) {
+        uint16_t ep = app_endpoint_id;
+
+        // TariffUnit default to kKVAh so reads succeed
+        esp_matter_attr_val_t tariff_val = esp_matter_enum8(static_cast<uint8_t>(chip::app::Clusters::Globals::TariffUnitEnum::kKVAh));
+        esp_err_t set_err = esp_matter::attribute::update(ep, chip::app::Clusters::CommodityPrice::Id,
+                                                          chip::app::Clusters::CommodityPrice::Attributes::TariffUnit::Id, &tariff_val);
+        if (set_err != ESP_OK) {
+            ESP_LOGW(TAG, "Failed to set CommodityPrice TariffUnit from hook, err: %d", set_err);
+        }
+
+        // Build and push a test CurrentPrice value
+        chip::app::Clusters::CommodityPrice::Structs::CommodityPriceStruct::Type testPrice;
+        testPrice.periodStart = 1704067200; // 2024-01-01 00:00:00 UTC
+        testPrice.periodEnd.SetNull();
+        testPrice.price.SetValue(static_cast<int64_t>(5000000));
+        testPrice.description.SetValue(chip::CharSpan::fromCharString("Test Price"));
+
+        chip::app::DataModel::Nullable<chip::app::Clusters::CommodityPrice::Structs::CommodityPriceStruct::Type> nullablePrice;
+        nullablePrice.SetNonNull(testPrice);
+
+        CHIP_ERROR err = instance->SetCurrentPrice(nullablePrice);
+        if (err != CHIP_NO_ERROR) {
+            ESP_LOGW(TAG, "Failed to set CurrentPrice test value from hook: %s", chip::ErrorStr(err));
+        } else {
+            ESP_LOGI(TAG, "CurrentPrice test value set from hook");
+        }
+    }
 }
 
 #ifdef CONFIG_OPENTHREAD_BORDER_ROUTER
@@ -54,9 +88,6 @@ using chip::app::Clusters::ThreadBorderRouterManagement::GenericOpenThreadBorder
 
 using namespace esp_matter;
 
-extern uint16_t app_endpoint_id;
-
-static const char *TAG = "esp_matter_console_helpers";
 
 extern SemaphoreHandle_t semaphoreHandle;
 
