@@ -291,6 +291,12 @@ ActionReturnStatus provider::ReadAttribute(const ReadAttributeRequest &request, 
         AttributeAccessInterfaceRegistry::Instance().Get(request.path.mEndpointId, request.path.mClusterId), encoder);
     VerifyOrReturnError(!aai_result.has_value(), *aai_result);
 
+    // If attribute is managed internally but AAI didn't handle it, return UnsupportedAttribute
+    uint16_t flags = attribute::get_flags(attribute);
+    if (flags & ATTRIBUTE_FLAG_MANAGED_INTERNALLY) {
+        return Protocols::InteractionModel::Status::UnsupportedAttribute;
+    }
+
     esp_matter_attr_val_t val = esp_matter_invalid(nullptr);
     VerifyOrReturnValue(attribute::get_val_internal(attribute, &val) == ESP_OK, Protocols::InteractionModel::Status::Failure);
     attribute_data_encode_buffer data_buffer(val);
