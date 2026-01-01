@@ -45,6 +45,11 @@ public:
         auto& tariffUnit = GetTariffUnit();
         tariffUnit.SetNonNull(TariffUnitEnum::kKVAh);
         
+        // Initialize StartDate (Matter epoch timestamp, e.g., January 1, 2025)
+        // Matter epoch = 2000-01-01 00:00:00 UTC
+        auto& startDate = GetStartDate();
+        startDate.SetNonNull(788908800);  // 2025-01-01 00:00:00 UTC (25 years * 365.25 days)
+        
         // Get direct reference to the TariffInfo value and initialize it
         auto& tariffInfo = GetTariffInfo();
         tariffInfo.SetNonNull();
