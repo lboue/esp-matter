@@ -55,6 +55,9 @@
 #include <app/clusters/commodity-price-server/commodity-price-server.h>
 #include <app/clusters/electrical-grid-conditions-server/electrical-grid-conditions-server.h>
 #include <app/clusters/meter-identification-server/meter-identification-server.h>
+#include <app/data-model/Nullable.h>
+#include <lib/core/Optional.h>
+#include <lib/support/Span.h>
 #include <unordered_map>
 
 using namespace chip::app::Clusters;
@@ -621,8 +624,29 @@ void ElectricalGridConditionsDelegateInitCB(void *delegate, uint16_t endpoint_id
 void MeterIdentificationDelegateInitCB(void *delegate, uint16_t endpoint_id)
 {
     uint32_t feature_map = get_feature_map_value(endpoint_id, MeterIdentification::Id);
-    MeterIdentification::Instance *meter_identification_instance = new MeterIdentification::Instance(endpoint_id, chip::BitMask<MeterIdentification::Feature, uint32_t>(feature_map));
+    MeterIdentification::Instance *meter_identification_instance =
+        new MeterIdentification::Instance(endpoint_id, chip::BitMask<MeterIdentification::Feature, uint32_t>(feature_map));
     meter_identification_instance->Init();
+
+    // Initialise with sane defaults so managed attributes are not null on first read
+    const chip::app::DataModel::Nullable<MeterIdentification::MeterTypeEnum> meter_type =
+        chip::app::DataModel::MakeNullable(MeterIdentification::MeterTypeEnum::kUtility);
+    const chip::app::DataModel::Nullable<chip::CharSpan> point_of_delivery =
+        chip::app::DataModel::MakeNullable(chip::CharSpan::fromCharString("Test delivery point"));
+    const chip::app::DataModel::Nullable<chip::CharSpan> meter_serial_number =
+        chip::app::DataModel::MakeNullable(chip::CharSpan::fromCharString("TST-123456789"));
+    const chip::app::DataModel::Nullable<chip::CharSpan> protocol_version =
+        chip::app::DataModel::MakeNullable(chip::CharSpan::fromCharString("1.2.3"));
+    const chip::app::DataModel::Nullable<chip::app::Clusters::Globals::Structs::PowerThresholdStruct::Type> power_threshold =
+        chip::app::DataModel::MakeNullable(chip::app::Clusters::Globals::Structs::PowerThresholdStruct::Type({ chip::Optional<int64_t>(2400000),
+                                                                                                               chip::Optional<int64_t>(120),
+                                                                                                               chip::app::Clusters::Globals::PowerThresholdSourceEnum::kContract }));
+
+    (void)meter_identification_instance->SetMeterType(meter_type);
+    (void)meter_identification_instance->SetPointOfDelivery(point_of_delivery);
+    (void)meter_identification_instance->SetMeterSerialNumber(meter_serial_number);
+    (void)meter_identification_instance->SetProtocolVersion(protocol_version);
+    (void)meter_identification_instance->SetPowerThreshold(power_threshold);
 }
 
 } // namespace delegate_cb

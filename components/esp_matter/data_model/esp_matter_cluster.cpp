@@ -4540,9 +4540,11 @@ cluster_t *create(endpoint_t *endpoint, config_t *config, uint8_t flags)
 
         /* Attributes managed internally */
         global::attribute::create_feature_map(cluster, 0);
-        attribute::create_meter_type(cluster, 0);
+        attribute::create_meter_type(cluster, nullable<uint8_t>(0));
         attribute::create_point_of_delivery(cluster, NULL, 0);
         attribute::create_meter_serial_number(cluster, NULL, 0);
+        attribute::create_protocol_version(cluster, NULL, 0);
+        attribute::create_power_threshold(cluster, NULL, 0, 0);
 
         /* Attributes not managed internally */
         global::attribute::create_cluster_revision(cluster, cluster_revision);
