@@ -590,11 +590,15 @@ void PushAvStreamTransportDelegateInitCB(void *delegate, uint16_t endpoint_id)
 
 void CommodityTariffDelegateInitCB(void *delegate, uint16_t endpoint_id)
 {
-    VerifyOrReturn(delegate != nullptr);
+    ESP_LOGI("CommodityTariff", "CommodityTariffDelegateInitCB called with delegate=%p, endpoint_id=%u", delegate, endpoint_id);
+    VerifyOrReturn(delegate != nullptr, ESP_LOGE("CommodityTariff", "Delegate is NULL, cannot initialize!"));
     CommodityTariff::Delegate *commodity_tariff_delegate = static_cast<CommodityTariff::Delegate*>(delegate);
     uint32_t feature_map = get_feature_map_value(endpoint_id, CommodityTariff::Id);
+    ESP_LOGI("CommodityTariff", "Creating Instance with feature_map=0x%08" PRIx32, feature_map);
     CommodityTariff::Instance *commodity_tariff_instance = new CommodityTariff::Instance(endpoint_id, *commodity_tariff_delegate, chip::BitMask<CommodityTariff::Feature, uint32_t>(feature_map));
+    ESP_LOGI("CommodityTariff", "Calling Init on instance %p", commodity_tariff_instance);
     commodity_tariff_instance->Init();
+    ESP_LOGI("CommodityTariff", "Init completed successfully");
 }
 
 
