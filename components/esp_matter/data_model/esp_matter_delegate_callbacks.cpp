@@ -637,10 +637,14 @@ void MeterIdentificationDelegateInitCB(void *delegate, uint16_t endpoint_id)
         chip::app::DataModel::MakeNullable(chip::CharSpan::fromCharString("TST-123456789"));
     const chip::app::DataModel::Nullable<chip::CharSpan> protocol_version =
         chip::app::DataModel::MakeNullable(chip::CharSpan::fromCharString("1.2.3"));
+    
+    chip::app::Clusters::Globals::Structs::PowerThresholdStruct::Type power_threshold_struct;
+    power_threshold_struct.powerThreshold = chip::Optional<int64_t>(2400000);
+    power_threshold_struct.apparentPowerThreshold = chip::Optional<int64_t>(120);
+    power_threshold_struct.powerThresholdSource = chip::app::DataModel::MakeNullable(chip::app::Clusters::Globals::PowerThresholdSourceEnum::kContract);
+    
     const chip::app::DataModel::Nullable<chip::app::Clusters::Globals::Structs::PowerThresholdStruct::Type> power_threshold =
-        chip::app::DataModel::MakeNullable(chip::app::Clusters::Globals::Structs::PowerThresholdStruct::Type({ chip::Optional<int64_t>(2400000),
-                                                                                                               chip::Optional<int64_t>(120),
-                                                                                                               chip::app::Clusters::Globals::PowerThresholdSourceEnum::kContract }));
+        chip::app::DataModel::MakeNullable(power_threshold_struct);
 
     (void)meter_identification_instance->SetMeterType(meter_type);
     (void)meter_identification_instance->SetPointOfDelivery(point_of_delivery);
