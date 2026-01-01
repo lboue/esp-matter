@@ -286,14 +286,16 @@ ActionReturnStatus provider::ReadAttribute(const ReadAttributeRequest &request, 
     attribute_t *attribute =
         attribute::get(request.path.mEndpointId, request.path.mClusterId, request.path.mAttributeId);
 
-    std::optional<CHIP_ERROR> aai_result = TryReadViaAccessInterface(
-        request.path,
-        AttributeAccessInterfaceRegistry::Instance().Get(request.path.mEndpointId, request.path.mClusterId), encoder);
+    AttributeAccessInterface *aai = AttributeAccessInterfaceRegistry::Instance().Get(request.path.mEndpointId, request.path.mClusterId);
+    std::optional<CHIP_ERROR> aai_result = TryReadViaAccessInterface(request.path, aai, encoder);
     VerifyOrReturnError(!aai_result.has_value(), *aai_result);
 
-    // If attribute is managed internally but AAI didn't handle it, return UnsupportedAttribute
+    // If attribute is managed internally but AAI didn't handle it, check if managed
     uint16_t flags = attribute::get_flags(attribute);
     if (flags & ATTRIBUTE_FLAG_MANAGED_INTERNALLY) {
+        // AAI should have handled this but didn't - likely not implemented
+        ESP_LOGW("data_model", "Managed attribute 0x%08" PRIX32 " on cluster 0x%04" PRIX32 " not handled by AAI",
+                 request.path.mAttributeId, request.path.mClusterId);
         return Protocols::InteractionModel::Status::UnsupportedAttribute;
     }
 
