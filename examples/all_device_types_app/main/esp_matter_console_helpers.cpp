@@ -32,6 +32,43 @@
 #include "electrical_measurement/electrical_measurement.h"
 #include "mock_delegates/mock_chime_delegate.h"
 
+// Custom CommodityTariff Delegate with example data
+class MyCommodityTariffDelegate : public chip::app::Clusters::CommodityTariff::Delegate {
+public:
+    MyCommodityTariffDelegate() {
+        // Initialize MgmtObj with example tariff data
+        using namespace chip::app::Clusters::CommodityTariff;
+        using namespace chip::app::DataModel;
+        
+        // Create TariffInfo data
+        Nullable<chip::app::Clusters::CommodityTariff::Structs::TariffInformationStruct::Type> tariffInfo;
+        tariffInfo.SetNonNull();
+        tariffInfo.Value().tariffLabel = MakeNullable(chip::CharSpan::fromCharString("Test Tariff"));
+        tariffInfo.Value().providerName = MakeNullable(chip::CharSpan::fromCharString("Test Provider"));
+        tariffInfo.Value().currency = chip::MakeOptional(
+            MakeNullable<chip::app::Clusters::Globals::Structs::CurrencyStruct::Type>(
+                { .currency = 978, .decimalPoints = 2 }  // EUR with 2 decimals
+            )
+        );
+        tariffInfo.Value().blockMode = MakeNullable(static_cast<BlockModeEnum>(0));
+        
+        // Set the value using the proper workflow
+        auto& mgmtObj = GetMgmtObj(CommodityTariffAttrTypeEnum::kTariffInfo);
+        CHIP_ERROR err = mgmtObj.SetNewValue(tariffInfo);
+        if (err == CHIP_NO_ERROR) {
+            err = mgmtObj.UpdateBegin(nullptr);
+            if (err == CHIP_NO_ERROR) {
+                mgmtObj.UpdateFinish(true);
+                ESP_LOGI("CommodityTariff", "MyCommodityTariffDelegate initialized with TariffInfo successfully");
+            } else {
+                ESP_LOGE("CommodityTariff", "Failed to begin update: %d", err);
+            }
+        } else {
+            ESP_LOGE("CommodityTariff", "Failed to set new value: %d", err);
+        }
+    }
+};
+
 // External variables for electrical sensor initialization
 bool g_electrical_sensor_created = false;
 
@@ -621,8 +658,8 @@ int create(uint8_t device_type_index)
             cluster::commodity_price::config_t commodity_price_config;
             cluster::commodity_price::create(endpoint, &commodity_price_config, CLUSTER_FLAG_SERVER);
 
-            // Create delegate for commodity tariff
-            static chip::app::Clusters::CommodityTariff::Delegate commodity_tariff_delegate;
+            // Create custom delegate for commodity tariff with example data
+            static MyCommodityTariffDelegate commodity_tariff_delegate;
             
             cluster::commodity_tariff::config_t commodity_tariff_config;
             commodity_tariff_config.delegate = &commodity_tariff_delegate;
