@@ -36,12 +36,12 @@
 class MyCommodityTariffDelegate : public chip::app::Clusters::CommodityTariff::Delegate {
 public:
     MyCommodityTariffDelegate() {
-        // Initialize MgmtObj with example tariff data
+        // Initialize with example tariff data by directly modifying the value reference
         using namespace chip::app::Clusters::CommodityTariff;
         using namespace chip::app::DataModel;
         
-        // Create TariffInfo data
-        Nullable<chip::app::Clusters::CommodityTariff::Structs::TariffInformationStruct::Type> tariffInfo;
+        // Get direct reference to the TariffInfo value and initialize it
+        auto& tariffInfo = GetTariffInfo();
         tariffInfo.SetNonNull();
         tariffInfo.Value().tariffLabel = MakeNullable(chip::CharSpan::fromCharString("Test Tariff"));
         tariffInfo.Value().providerName = MakeNullable(chip::CharSpan::fromCharString("Test Provider"));
@@ -52,20 +52,7 @@ public:
         );
         tariffInfo.Value().blockMode = MakeNullable(static_cast<BlockModeEnum>(0));
         
-        // Set the value using the proper workflow
-        auto& mgmtObj = GetMgmtObj(CommodityTariffAttrTypeEnum::kTariffInfo);
-        CHIP_ERROR err = mgmtObj.SetNewValue(tariffInfo);
-        if (err == CHIP_NO_ERROR) {
-            err = mgmtObj.UpdateBegin(nullptr);
-            if (err == CHIP_NO_ERROR) {
-                mgmtObj.UpdateFinish(true);
-                ESP_LOGI("CommodityTariff", "MyCommodityTariffDelegate initialized with TariffInfo successfully");
-            } else {
-                ESP_LOGE("CommodityTariff", "Failed to begin update: %d", err);
-            }
-        } else {
-            ESP_LOGE("CommodityTariff", "Failed to set new value: %d", err);
-        }
+        ESP_LOGI("CommodityTariff", "MyCommodityTariffDelegate initialized with TariffInfo");
     }
 };
 
