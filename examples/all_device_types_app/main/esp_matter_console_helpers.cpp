@@ -38,7 +38,12 @@ public:
     MyCommodityTariffDelegate() {
         // Initialize with example tariff data by directly modifying the value reference
         using namespace chip::app::Clusters::CommodityTariff;
+        using namespace chip::app::Clusters::Globals;
         using namespace chip::app::DataModel;
+        
+        // Initialize TariffUnit (e.g., kKVAh)
+        auto& tariffUnit = GetTariffUnit();
+        tariffUnit.SetNonNull(TariffUnitEnum::kKVAh);
         
         // Get direct reference to the TariffInfo value and initialize it
         auto& tariffInfo = GetTariffInfo();
@@ -46,13 +51,13 @@ public:
         tariffInfo.Value().tariffLabel = MakeNullable(chip::CharSpan::fromCharString("Test Tariff"));
         tariffInfo.Value().providerName = MakeNullable(chip::CharSpan::fromCharString("Test Provider"));
         tariffInfo.Value().currency = chip::MakeOptional(
-            MakeNullable<chip::app::Clusters::Globals::Structs::CurrencyStruct::Type>(
+            MakeNullable<Globals::Structs::CurrencyStruct::Type>(
                 { .currency = 978, .decimalPoints = 2 }  // EUR with 2 decimals
             )
         );
         tariffInfo.Value().blockMode = MakeNullable(static_cast<BlockModeEnum>(0));
         
-        ESP_LOGI("CommodityTariff", "MyCommodityTariffDelegate initialized with TariffInfo");
+        ESP_LOGI("CommodityTariff", "MyCommodityTariffDelegate initialized with TariffUnit and TariffInfo");
     }
 };
 
