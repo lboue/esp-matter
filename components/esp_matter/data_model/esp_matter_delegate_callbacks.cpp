@@ -56,6 +56,10 @@
 #include <app/clusters/electrical-grid-conditions-server/electrical-grid-conditions-server.h>
 #include <unordered_map>
 
+// Weak hook (optional) for applications to capture the CommodityPrice instance.
+extern "C" void commodity_price_instance_created_hook(chip::app::Clusters::CommodityPrice::Instance * instance)
+    __attribute__((weak));
+
 using namespace chip::app::Clusters;
 namespace esp_matter {
 namespace cluster {
@@ -605,6 +609,10 @@ void CommodityPriceDelegateInitCB(void *delegate, uint16_t endpoint_id)
     uint32_t feature_map = get_feature_map_value(endpoint_id, CommodityPrice::Id);
     CommodityPrice::Instance *commodity_price_instance = new CommodityPrice::Instance(endpoint_id, *commodity_price_delegate, chip::BitMask<CommodityPrice::Feature, uint32_t>(feature_map));
     commodity_price_instance->Init();
+    
+    if (commodity_price_instance_created_hook) {
+        commodity_price_instance_created_hook(commodity_price_instance);
+    }
 }
 
 

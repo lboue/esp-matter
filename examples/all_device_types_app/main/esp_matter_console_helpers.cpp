@@ -19,6 +19,8 @@
 #include "esp_vfs_usb_serial_jtag.h"
 #include "hal/uart_types.h"
 #include "driver/uart.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 #if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 #include "esp_vfs_usb_serial_jtag.h"
 #include "driver/usb_serial_jtag.h"
@@ -35,6 +37,14 @@
 
 // External variables for electrical sensor initialization
 bool g_electrical_sensor_created = false;
+
+// Global storage for CommodityPrice Instance (set by delegate init callback)
+static chip::app::Clusters::CommodityPrice::Instance* g_commodity_price_instance = nullptr;
+
+// Hook function called by the delegate init callback to store the instance
+extern "C" void commodity_price_instance_created_hook(chip::app::Clusters::CommodityPrice::Instance* instance) {
+    g_commodity_price_instance = instance;
+}
 
 #ifdef CONFIG_OPENTHREAD_BORDER_ROUTER
 #include <platform/KvsPersistentStorageDelegate.h>
@@ -627,11 +637,56 @@ int create(uint8_t device_type_index)
             /* Provide a sane default TariffUnit so attribute reads succeed immediately */
             if (commodity_price_cluster) {
                 uint16_t tariff_endpoint = endpoint::get_id(endpoint);
+                
+                /* Set TariffUnit default value */
                 esp_matter_attr_val_t tariff_val = esp_matter_enum8(static_cast<uint8_t>(chip::app::Clusters::Globals::TariffUnitEnum::kKVAh));
                 esp_err_t set_err = esp_matter::attribute::update(tariff_endpoint, chip::app::Clusters::CommodityPrice::Id,
                                            chip::app::Clusters::CommodityPrice::Attributes::TariffUnit::Id, &tariff_val);
                 if (set_err != ESP_OK) {
                     ESP_LOGW(TAG, "Failed to set CommodityPrice TariffUnit, err: %d", set_err);
+                }
+
+                /* Set a test CurrentPrice value using the global Instance variable */
+                // The Instance is created in CommodityPriceDelegateInitCB and stored in g_commodity_price_instance
+                // We need a small delay to allow the instance to be created by the framework
+                vTaskDelay(pdMS_TO_TICKS(10));
+                
+                if (g_commodity_price_instance) {
+                    // Create a test CurrentPrice structure
+                    chip::app::Clusters::CommodityPrice::Structs::CommodityPriceStruct::Type testPrice;
+                    
+                    // Set the period start to now (epoch time in seconds)
+                    // Using a fixed timestamp: 2024-01-01 00:00:00 UTC
+                    testPrice.periodStart = 1704067200;
+                    
+                    // Period end is optional - set it to null for this test
+                    testPrice.periodEnd.SetNull();
+                    
+                    // Set the price value (in smallest monetary unit)
+                    // This is a "money" type which is int64_t
+                    // Example: 5000000 = 50.00 (assuming 5 decimal points for currency)
+                    testPrice.price.SetValue(static_cast<int64_t>(5000000));
+                    
+                    // Price level is optional - not setting it for this test
+                    
+                    // Description is optional
+                    testPrice.description.SetValue(chip::CharSpan::fromCharString("Test Price"));
+                    
+                    // Components are optional - not setting for this simple test
+                    
+                    // Create a Nullable wrapper and set the value
+                    chip::app::DataModel::Nullable<chip::app::Clusters::CommodityPrice::Structs::CommodityPriceStruct::Type> nullablePrice;
+                    nullablePrice.SetNonNull(testPrice);
+                    
+                    // Call SetCurrentPrice on the instance
+                    CHIP_ERROR err = g_commodity_price_instance->SetCurrentPrice(nullablePrice);
+                    if (err != CHIP_NO_ERROR) {
+                        ESP_LOGW(TAG, "Failed to set CurrentPrice test value: %s", chip::ErrorStr(err));
+                    } else {
+                        ESP_LOGI(TAG, "Successfully set CurrentPrice test value");
+                    }
+                } else {
+                    ESP_LOGW(TAG, "CommodityPrice Instance not available yet, will be set via test event trigger");
                 }
             }
 

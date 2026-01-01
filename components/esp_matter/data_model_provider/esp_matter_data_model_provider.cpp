@@ -605,6 +605,11 @@ CHIP_ERROR provider::Attributes(const ConcreteClusterPath &path, ReadOnlyBufferB
 
 void provider::Temporary_ReportAttributeChanged(const AttributePathParams &path)
 {
+    // Skip notifications until the provider has been started to avoid dereferencing an empty context
+    if (!mContext.has_value()) {
+        ESP_LOGD(TAG, "Temporary_ReportAttributeChanged called before provider startup");
+        return;
+    }
     cluster_t *cluster = cluster::get(path.mEndpointId, path.mClusterId);
     VerifyOrReturn(cluster != nullptr);
     VerifyOrReturn(cluster::increase_data_version(cluster) == ESP_OK);
