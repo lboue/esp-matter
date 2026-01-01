@@ -627,7 +627,7 @@ int create(uint8_t device_type_index)
             /* Provide a sane default TariffUnit so attribute reads succeed immediately */
             if (commodity_price_cluster) {
                 uint16_t tariff_endpoint = endpoint::get_id(endpoint);
-                esp_matter_attr_val_t tariff_val = esp_matter_enum8(static_cast<uint8_t>(chip::app::Clusters::Globals::TariffUnitEnum::kKWh));
+                esp_matter_attr_val_t tariff_val = esp_matter_enum8(static_cast<uint8_t>(chip::app::Clusters::Globals::TariffUnitEnum::kKVAh));
                 esp_err_t set_err = esp_matter::attribute::update(tariff_endpoint, chip::app::Clusters::CommodityPrice::Id,
                                            chip::app::Clusters::CommodityPrice::Attributes::TariffUnit::Id, &tariff_val);
                 if (set_err != ESP_OK) {
