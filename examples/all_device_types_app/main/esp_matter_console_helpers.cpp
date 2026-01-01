@@ -28,6 +28,7 @@
 #include <device_types.h>
 #include <app/clusters/fan-control-server/fan-control-delegate.h>
 #include <app/clusters/fan-control-server/fan-control-server.h>
+#include <app/clusters/commodity-tariff-server/commodity-tariff-server.h>
 #include "electrical_measurement/electrical_measurement.h"
 #include "mock_delegates/mock_chime_delegate.h"
 
@@ -620,7 +621,11 @@ int create(uint8_t device_type_index)
             cluster::commodity_price::config_t commodity_price_config;
             cluster::commodity_price::create(endpoint, &commodity_price_config, CLUSTER_FLAG_SERVER);
 
+            // Create delegate for commodity tariff
+            static chip::app::Clusters::CommodityTariff::Delegate commodity_tariff_delegate;
+            
             cluster::commodity_tariff::config_t commodity_tariff_config;
+            commodity_tariff_config.delegate = &commodity_tariff_delegate;
             commodity_tariff_config.feature_flags = cluster::commodity_tariff::feature::pricing::get_id();
             cluster::commodity_tariff::create(endpoint, &commodity_tariff_config, CLUSTER_FLAG_SERVER);
 
