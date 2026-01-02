@@ -235,6 +235,7 @@ cluster_t *create(endpoint_t *endpoint, config_t *config, uint8_t flags)
 
     if (flags & CLUSTER_FLAG_SERVER) {
         if (config && config->delegate != nullptr) {
+            /* Not a delegate but an Initialization callback */
             static const auto delegate_init_cb = ActionsDelegateInitCB;
             set_delegate_and_init_callback(cluster, delegate_init_cb, config->delegate);
         }

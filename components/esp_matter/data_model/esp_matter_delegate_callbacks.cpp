@@ -618,6 +618,7 @@ void ElectricalGridConditionsDelegateInitCB(void *delegate, uint16_t endpoint_id
     electrical_grid_conditions_instance->Init();
 }
 
+/* Not a delegate but an Initialization callback */
 void MeterIdentificationDelegateInitCB(void *delegate, uint16_t endpoint_id)
 {
     uint32_t feature_map = get_feature_map_value(endpoint_id, MeterIdentification::Id);
