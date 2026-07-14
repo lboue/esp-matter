@@ -62,8 +62,10 @@ Function EV Board.
 Because of this, no changes to `esp_video_if.c`, `esp32p4_frame_grabber.c` or
 `media_stream.c` are needed to drive the Nano's camera — only the sensor
 Kconfig selection changes. This is implemented as a ready-to-use sdkconfig
-overlay, `sdkconfig.defaults.esp32p4.waveshare_nano`, added on the
-`feature/waveshare-esp32-p4-nano-camera` branch of the KVS SDK checkout
+overlay,
+[`sdkconfig.defaults.esp32p4.waveshare_nano`](https://github.com/lboue/amazon-kinesis-video-streams-webrtc-sdk-c/blob/feature/waveshare-esp32-p4-nano-camera/esp_port/examples/streaming_only/sdkconfig.defaults.esp32p4.waveshare_nano),
+on the `feature/waveshare-esp32-p4-nano-camera` branch of
+[lboue/amazon-kinesis-video-streams-webrtc-sdk-c](https://github.com/lboue/amazon-kinesis-video-streams-webrtc-sdk-c/tree/feature/waveshare-esp32-p4-nano-camera)
 (`${KVS_SDK_PATH}/esp_port/examples/streaming_only/`), layered on top of the
 existing `sdkconfig.defaults.esp32p4`. Build with:
 
@@ -73,6 +75,15 @@ idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32p4;sdkc
 idf.py build
 idf.py -p [PORT] flash monitor
 ```
+
+**Verified**: `idf.py build` with this overlay completes cleanly on IDF
+v5.4.1 (`Project build complete`, `streaming_only.bin` generated, 38% free
+flash) — no source changes needed, only the sensor Kconfig swap. This
+confirms the overlay compiles and links; it does **not** confirm behavior on
+real hardware, which hasn't been tested. Note: the sensor Kconfig symbols use
+uppercase resolution suffixes (e.g. `..._1920X1080_30FPS`, not `1920x1080`)
+in the vendored `esp_cam_sensor` version — double-check casing if you edit
+the overlay further.
 
 **Audio already works too, unmodified.** `OpusFrameGrabber.c` and
 `OpusAudioPlayer.c` call the Function EV Board BSP's
