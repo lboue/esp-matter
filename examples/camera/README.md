@@ -38,6 +38,43 @@ The split mode consists of two separate firmware images:
     -   Built-in camera support
     -   SDIO communication between processors
 
+-   **Waveshare ESP32-P4-Nano** (alternative board, see notes below)
+    -   ESP32-P4 + onboard ESP32-C6 co-processor over SDIO
+    -   2-lane MIPI-CSI connector (Raspberry Pi camera compatible), bundled
+        with a 5MP OV5647 sensor
+    -   32MB PSRAM, 16MB Flash
+
+### Notes for the Waveshare ESP32-P4-Nano
+
+The `media_adapter` firmware (`streaming_only` example from the KVS SDK) is
+written against Espressif's `esp32_p4_function_ev_board` BSP
+(`bsp_camera_new()` / `bsp_camera_config_t`). The Waveshare board ships a
+different BSP (`waveshare/esp32_p4_nano`) that only covers
+display/touch/I2C/I2S/SD and has **no camera helper**, so the camera must be
+driven directly through `esp_video_init()` + the `esp_cam_sensor` OV5647
+driver (see Espressif's `esp_video` component and Waveshare's Brookesia
+`Camera.cpp` for a reference implementation). Porting `media_adapter` to this
+board therefore requires rewriting `esp32p4_frame_grabber.c` to use the V4L2
+API instead of `bsp_camera_new()` — this is **not** included here.
+
+What you *can* configure today via `idf.py menuconfig` on the `esp32p4`
+target (`${KVS_SDK_PATH}/esp_port/examples/streaming_only`), once the frame
+grabber is adapted:
+
+-   Component config -> ESP Video -> Camera Sensor:
+    -   `CONFIG_CAMERA_OV5647=y`
+    -   `CONFIG_CAMERA_OV5647_AUTO_DETECT=y`
+    -   `CONFIG_CAMERA_OV5647_AUTO_DETECT_MIPI_INTERFACE_SENSOR=y`
+    -   `CONFIG_CAMERA_OV5647_MIPI_RAW10_1920x1080_30FPS=y` (or another
+        OV5647 mode)
+-   The board's I2C bus for the camera SCCB interface is fixed in the
+    Waveshare BSP: `SDA = GPIO7`, `SCL = GPIO8`, `BSP_I2C_NUM = 1`. There is
+    no dedicated camera reset/power-down pin (pass `reset_pin = -1`,
+    `pwdn_pin = -1` to `esp_video_init_csi_config_t`).
+-   The SDIO link to the onboard ESP32-C6 uses different GPIOs than the
+    Function EV Board (`CONFIG_ESP_SDIO_PIN_D0` / `D1` etc. under "SDIO");
+    verify against the Waveshare wiki/schematic before flashing.
+
 ## System Architecture
 
 ```
