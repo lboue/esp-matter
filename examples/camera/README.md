@@ -74,11 +74,17 @@ idf.py build
 idf.py -p [PORT] flash monitor
 ```
 
-Audio (microphone/speaker) is **not covered** by this overlay: `OpusFrameGrabber.c`
-and `OpusAudioPlayer.c` still call the Function EV Board BSP's
-`bsp_audio_codec_microphone_init()` / `bsp_audio_codec_speaker_init()`, which
-assume that board's onboard codec chip is present. Video-only streaming
-works; audio support for the Nano is follow-up work.
+**Audio already works too, unmodified.** `OpusFrameGrabber.c` and
+`OpusAudioPlayer.c` call the Function EV Board BSP's
+`bsp_audio_codec_microphone_init()` / `bsp_audio_codec_speaker_init()`.
+Comparing that BSP's source against Waveshare's `esp32_p4_nano` BSP shows
+`bsp_audio_init()` and both codec init functions are byte-for-byte identical
+on both boards: same ES8311 codec chip and I2C address, same I2S pins
+(SCLK=GPIO12, MCLK=GPIO13, LCLK=GPIO10, DOUT=GPIO9, DSIN=GPIO11), same power
+amplifier pin (GPIO53), same default `BSP_I2S_NUM=1`. Waveshare cloned
+Espressif's reference audio design along with I2C/I2S/SDIO, so no overlay or
+source change is needed for audio either — only the camera sensor Kconfig
+(above) differs between the two boards.
 
 ## System Architecture
 
