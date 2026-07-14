@@ -71,9 +71,14 @@ grabber is adapted:
     Waveshare BSP: `SDA = GPIO7`, `SCL = GPIO8`, `BSP_I2C_NUM = 1`. There is
     no dedicated camera reset/power-down pin (pass `reset_pin = -1`,
     `pwdn_pin = -1` to `esp_video_init_csi_config_t`).
--   The SDIO link to the onboard ESP32-C6 uses different GPIOs than the
-    Function EV Board (`CONFIG_ESP_SDIO_PIN_D0` / `D1` etc. under "SDIO");
-    verify against the Waveshare wiki/schematic before flashing.
+-   **SDIO link to the onboard ESP32-C6**: verified against Waveshare's own
+    Brookesia firmware (`firmware/brookesia/sdkconfig.defaults` in
+    [waveshareteam/esp32-p4-platform](https://github.com/waveshareteam/esp32-p4-platform)),
+    which selects `CONFIG_ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD=y`. This means
+    the Nano reuses the **same SDIO wiring as the Function EV Board**, so no
+    pin changes are needed in `esp_hosted`'s "Configure GPIOs for P4
+    Development Board" choice — keep the `ESP_P4_DEV_BOARD_FUNC_BOARD`
+    default (CLK=GPIO18, CMD=GPIO19, D0-D3=GPIO14-17, RESET=GPIO54).
 
 ## System Architecture
 
