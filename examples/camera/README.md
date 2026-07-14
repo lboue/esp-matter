@@ -46,39 +46,39 @@ The split mode consists of two separate firmware images:
 
 ### Notes for the Waveshare ESP32-P4-Nano
 
-The `media_adapter` firmware (`streaming_only` example from the KVS SDK) is
-written against Espressif's `esp32_p4_function_ev_board` BSP
-(`bsp_camera_new()` / `bsp_camera_config_t`). The Waveshare board ships a
-different BSP (`waveshare/esp32_p4_nano`) that only covers
-display/touch/I2C/I2S/SD and has **no camera helper**, so the camera must be
-driven directly through `esp_video_init()` + the `esp_cam_sensor` OV5647
-driver (see Espressif's `esp_video` component and Waveshare's Brookesia
-`Camera.cpp` for a reference implementation). Porting `media_adapter` to this
-board therefore requires rewriting `esp32p4_frame_grabber.c` to use the V4L2
-API instead of `bsp_camera_new()` — this is **not** included here.
+`media_adapter`'s camera capture (`esp_video_if.c` in the `media_stream`
+component, used whenever `CONFIG_USE_ESP_VIDEO_IF=y`, the P4 default) already
+goes through the generic `esp_video_init()` + `esp_cam_sensor` V4L2-style API
+rather than a board BSP camera helper. The I2C bus it opens for the camera
+SCCB interface is hardcoded to `SDA=GPIO7` / `SCL=GPIO8` with no
+reset/power-down pin — comparing the Function EV Board's own BSP header
+(`bsp/esp32_p4_function_ev_board.h`) against Waveshare's `esp32_p4_nano` BSP
+header shows these are **the same pins on both boards** (I2C, I2S and the
+amplifier enable line are all identical), and the SDIO link to the onboard
+ESP32-C6 is also identical (see above). The only real hardware difference is
+the bundled camera sensor: **OV5647** on the Nano vs. **SC2336** on the
+Function EV Board.
 
-What you *can* configure today via `idf.py menuconfig` on the `esp32p4`
-target (`${KVS_SDK_PATH}/esp_port/examples/streaming_only`), once the frame
-grabber is adapted:
+Because of this, no changes to `esp_video_if.c`, `esp32p4_frame_grabber.c` or
+`media_stream.c` are needed to drive the Nano's camera — only the sensor
+Kconfig selection changes. This is implemented as a ready-to-use sdkconfig
+overlay, `sdkconfig.defaults.esp32p4.waveshare_nano`, added on the
+`feature/waveshare-esp32-p4-nano-camera` branch of the KVS SDK checkout
+(`${KVS_SDK_PATH}/esp_port/examples/streaming_only/`), layered on top of the
+existing `sdkconfig.defaults.esp32p4`. Build with:
 
--   Component config -> ESP Video -> Camera Sensor:
-    -   `CONFIG_CAMERA_OV5647=y`
-    -   `CONFIG_CAMERA_OV5647_AUTO_DETECT=y`
-    -   `CONFIG_CAMERA_OV5647_AUTO_DETECT_MIPI_INTERFACE_SENSOR=y`
-    -   `CONFIG_CAMERA_OV5647_MIPI_RAW10_1920x1080_30FPS=y` (or another
-        OV5647 mode)
--   The board's I2C bus for the camera SCCB interface is fixed in the
-    Waveshare BSP: `SDA = GPIO7`, `SCL = GPIO8`, `BSP_I2C_NUM = 1`. There is
-    no dedicated camera reset/power-down pin (pass `reset_pin = -1`,
-    `pwdn_pin = -1` to `esp_video_init_csi_config_t`).
--   **SDIO link to the onboard ESP32-C6**: verified against Waveshare's own
-    Brookesia firmware (`firmware/brookesia/sdkconfig.defaults` in
-    [waveshareteam/esp32-p4-platform](https://github.com/waveshareteam/esp32-p4-platform)),
-    which selects `CONFIG_ESP_HOSTED_P4_DEV_BOARD_FUNC_BOARD=y`. This means
-    the Nano reuses the **same SDIO wiring as the Function EV Board**, so no
-    pin changes are needed in `esp_hosted`'s "Configure GPIOs for P4
-    Development Board" choice — keep the `ESP_P4_DEV_BOARD_FUNC_BOARD`
-    default (CLK=GPIO18, CMD=GPIO19, D0-D3=GPIO14-17, RESET=GPIO54).
+```bash
+cd ${KVS_SDK_PATH}/esp_port/examples/streaming_only
+idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32p4;sdkconfig.defaults.esp32p4.waveshare_nano" set-target esp32p4
+idf.py build
+idf.py -p [PORT] flash monitor
+```
+
+Audio (microphone/speaker) is **not covered** by this overlay: `OpusFrameGrabber.c`
+and `OpusAudioPlayer.c` still call the Function EV Board BSP's
+`bsp_audio_codec_microphone_init()` / `bsp_audio_codec_speaker_init()`, which
+assume that board's onboard codec chip is present. Video-only streaming
+works; audio support for the Nano is follow-up work.
 
 ## System Architecture
 
