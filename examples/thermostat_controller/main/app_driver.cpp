@@ -48,17 +48,13 @@ static void app_driver_set_heat_demand(bool active)
 
 #if CONFIG_BSP_LEDS_NUM > 0
     if (s_status_led) {
-        if (active) {
-            led_indicator_irgb_t red = {};
-            red.r = 255;
-            red.g = 0;
-            red.b = 0;
-            red.index = 127; /* control all LEDs on the strip */
-            led_indicator_set_rgb(s_status_led, red.value);
-            led_indicator_start(s_status_led, BSP_LED_ON);
-        } else {
-            led_indicator_start(s_status_led, BSP_LED_OFF);
-        }
+        /* Build the packed 0xRRGGBB (+index) value with the library's own SET_IRGB()
+         * macro rather than the led_indicator_irgb_t bitfield: that struct's field
+         * order does not match what SET_RGB()/GET_RED()/GET_BLUE() expect, so building
+         * it by hand silently swaps red and blue. */
+        uint32_t irgb = active ? SET_IRGB(127 /* all LEDs */, 255, 0, 0) : SET_IRGB(127, 0, 255, 0);
+        led_indicator_set_rgb(s_status_led, irgb);
+        led_indicator_start(s_status_led, BSP_LED_ON);
     }
 #endif
 }
@@ -208,7 +204,8 @@ app_driver_handle_t app_driver_boiler_demand_init()
     led_indicator_handle_t leds[CONFIG_BSP_LEDS_NUM];
     ESP_ERROR_CHECK(bsp_led_indicator_create(leds, NULL, CONFIG_BSP_LEDS_NUM));
     s_status_led = leds[0];
-    led_indicator_start(s_status_led, BSP_LED_OFF);
+    led_indicator_set_rgb(s_status_led, SET_IRGB(127 /* all LEDs */, 0, 255, 0));
+    led_indicator_start(s_status_led, BSP_LED_ON);
 #endif
 
     client::set_request_callback(app_driver_client_callback, app_driver_client_group_invoke_command_callback, NULL);

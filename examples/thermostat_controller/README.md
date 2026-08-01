@@ -38,7 +38,7 @@ flowchart LR
     subgraph C["This example: ESP32-C6 Thermostat Controller"]
         SUB["Bound subscription\n(Thermostat client cluster)"]
         LOGIC["Heat demand logic\nRunningState.Heat bit\nOR LocalTemp <= Setpoint - hysteresis"]
-        LED["Status LED\nred = heat demand ON"]
+        LED["Status LED\nred = heat demand ON\ngreen = no demand"]
     end
 
     B["Boiler relay input\n(not wired yet, see &sect;4)"]
@@ -57,7 +57,7 @@ This example is configured for an **ESP32-C6-DevKitM-1 / DevKitC-1**:
 
 -   BOOT button (GPIO9) -> factory reset (hold for 5s, per `CONFIG_BUTTON_LONG_PRESS_TIME_MS`).
 -   On-board WS2812 RGB LED (GPIO8) -> heat-demand indicator: **red** when the bound
-    thermostat is calling for heat, off otherwise.
+    thermostat is calling for heat, **green** otherwise.
 
 To use a different board, adjust `CONFIG_BSP_BUTTON_1_GPIO` / `CONFIG_BSP_LED_RGB_GPIO`
 (or add a `sdkconfig.defaults.<target>` for your chip) via `idf.py menuconfig`.
@@ -110,9 +110,9 @@ I (....) app_driver: OccupiedHeatingSetpoint=21.00 degC
 I (....) app_driver: RunningState heat=1, LocalTemperature/OccupiedHeatingSetpoint-based heat=1 -> demand=1
 I (....) app_driver: Le thermostat demande un cycle de chauffe -> chaudiere ON
 ```
-and the status LED turns on. When the thermostat later reports `ThermostatRunningState`
+and the status LED turns red. When the thermostat later reports `ThermostatRunningState`
 with the `Heat` bit cleared (or `LocalTemperature` reaches `OccupiedHeatingSetpoint`),
-the LED turns back off and `Plus de demande de chauffe -> chaudiere OFF` is logged.
+the LED turns back green and `Plus de demande de chauffe -> chaudiere OFF` is logged.
 
 Two things can be tuned under `idf.py menuconfig` -> `Example Configuration`:
 
@@ -179,5 +179,4 @@ The thermostat is not getting bound to the controller:
     neither `ThermostatRunningState` nor `LocalTemperature`/`OccupiedHeatingSetpoint` are
     usable on your device, add `PIHeatingDemand` (attribute id `0x0008`) as a fourth
     subscribed attribute in `main/app_driver.cpp`.
--   Make sure the binding was written on the **controller's** endpoint 1, not the
-    thermostat's.
+-   Make sure the binding was written on the **controller's** endpoint 1, not the thermostat's.
