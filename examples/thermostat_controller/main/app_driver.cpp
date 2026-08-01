@@ -13,6 +13,7 @@
 #include <esp_matter.h>
 #include <esp_matter_client.h>
 #include "bsp/esp-bsp.h"
+#include <led_convert.h>
 
 #include <app_priv.h>
 #include <app_reset.h>
@@ -47,7 +48,17 @@ static void app_driver_set_heat_demand(bool active)
 
 #if CONFIG_BSP_LEDS_NUM > 0
     if (s_status_led) {
-        led_indicator_start(s_status_led, active ? BSP_LED_ON : BSP_LED_OFF);
+        if (active) {
+            led_indicator_irgb_t red = {};
+            red.r = 255;
+            red.g = 0;
+            red.b = 0;
+            red.index = 127; /* control all LEDs on the strip */
+            led_indicator_set_rgb(s_status_led, red.value);
+            led_indicator_start(s_status_led, BSP_LED_ON);
+        } else {
+            led_indicator_start(s_status_led, BSP_LED_OFF);
+        }
     }
 #endif
 }

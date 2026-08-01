@@ -25,13 +25,39 @@ turn this into an actual boiler-control device.
 
 See the [docs](https://docs.espressif.com/projects/esp-matter/en/latest/esp32/developing.html) for more information about building and flashing the firmware.
 
+### Overview
+
+```mermaid
+flowchart LR
+    subgraph T["Real Thermostat (Matter server)"]
+        RS["ThermostatRunningState"]
+        LT["LocalTemperature"]
+        HS["OccupiedHeatingSetpoint"]
+    end
+
+    subgraph C["This example: ESP32-C6 Thermostat Controller"]
+        SUB["Bound subscription\n(Thermostat client cluster)"]
+        LOGIC["Heat demand logic\nRunningState.Heat bit\nOR LocalTemp <= Setpoint - hysteresis"]
+        LED["Status LED\nred = heat demand ON"]
+    end
+
+    B["Boiler relay input\n(not wired yet, see &sect;4)"]
+
+    RS -- attribute report --> SUB
+    LT -- attribute report --> SUB
+    HS -- attribute report --> SUB
+    SUB --> LOGIC
+    LOGIC -->|demand ON / OFF| LED
+    LOGIC -.future GPIO.-> B
+```
+
 ## 1. Hardware
 
 This example is configured for an **ESP32-C6-DevKitM-1 / DevKitC-1**:
 
 -   BOOT button (GPIO9) -> factory reset (hold for 5s, per `CONFIG_BUTTON_LONG_PRESS_TIME_MS`).
--   On-board WS2812 RGB LED (GPIO8) -> heat-demand indicator (on when the bound
-    thermostat is calling for heat, off otherwise).
+-   On-board WS2812 RGB LED (GPIO8) -> heat-demand indicator: **red** when the bound
+    thermostat is calling for heat, off otherwise.
 
 To use a different board, adjust `CONFIG_BSP_BUTTON_1_GPIO` / `CONFIG_BSP_LED_RGB_GPIO`
 (or add a `sdkconfig.defaults.<target>` for your chip) via `idf.py menuconfig`.
