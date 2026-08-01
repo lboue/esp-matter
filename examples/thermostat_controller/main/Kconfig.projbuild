@@ -1,0 +1,33 @@
+menu "Example Configuration"
+
+    config THERMOSTAT_CONTROLLER_SUBSCRIBE_MIN_INTERVAL
+        int "Minimum subscription interval (s)"
+        default 1
+        range 0 60
+        help
+            Minimum interval, in seconds, requested when subscribing to the bound thermostat's
+            ThermostatRunningState attribute.
+
+    config THERMOSTAT_CONTROLLER_SUBSCRIBE_MAX_INTERVAL
+        int "Maximum subscription interval (s)"
+        default 10
+        range 1 3600
+        help
+            Maximum interval, in seconds, requested when subscribing to the bound thermostat's
+            ThermostatRunningState attribute. This bounds how quickly a heat demand change is
+            reported when no attribute report is otherwise received (keep-alive).
+
+    config THERMOSTAT_CONTROLLER_HEATING_HYSTERESIS_CENTIDEGREES
+        int "LocalTemperature/OccupiedHeatingSetpoint fallback hysteresis (0.01 degC)"
+        default 50
+        range 0 500
+        help
+            Some thermostats do not report ThermostatRunningState, or report it without the
+            Heat bit changing. As a fallback, heat demand is also inferred by comparing
+            LocalTemperature to OccupiedHeatingSetpoint: demand turns on once LocalTemperature
+            drops to (setpoint - hysteresis) or below, and turns off once LocalTemperature
+            reaches the setpoint. This avoids rapid toggling around the setpoint. Value is in
+            hundredths of a degree Celsius, matching the Matter attribute encoding (default 50
+            = 0.5 degC).
+
+endmenu
