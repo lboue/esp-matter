@@ -106,34 +106,10 @@ static void app_event_cb(const ChipDeviceEvent *event, intptr_t arg)
         ESP_LOGI(TAG, "Commissioning window closed");
         break;
 
-    case chip::DeviceLayer::DeviceEventType::kBindingsChangedViaCluster: {
+    case chip::DeviceLayer::DeviceEventType::kBindingsChangedViaCluster:
         ESP_LOGI(TAG, "Binding entry changed");
-        if (!s_subscribe_pending) {
-            break;
-        }
-        for (const auto &binding : chip::app::Clusters::Binding::Table::GetInstance()) {
-            if (binding.type != chip::app::Clusters::Binding::MATTER_UNICAST_BINDING ||
-                event->BindingsChanged.fabricIndex != binding.fabricIndex ||
-                binding.clusterId.value_or(0) != chip::app::Clusters::Thermostat::Id) {
-                continue;
-            }
-            ESP_LOGI(TAG, "Bound to thermostat nodeId=0x" ChipLogFormatX64 " endpoint=%d, subscribing to "
-                    "ThermostatRunningState/LocalTemperature/OccupiedHeatingSetpoint",
-                    ChipLogValueX64(binding.nodeId), binding.remote);
-
-            /* Only the endpoint/cluster carried here matter: app_driver_subscribe_thermostat_attributes()
-             * builds the actual (multi-attribute) subscription path list from them. */
-            client::request_handle_t req_handle;
-            req_handle.type = esp_matter::client::SUBSCRIBE_ATTR;
-            req_handle.attribute_path = {binding.remote, binding.clusterId.value(),
-                                         chip::app::Clusters::Thermostat::Attributes::ThermostatRunningState::Id};
-            auto &server = chip::Server::GetInstance();
-            client::connect(server.GetCASESessionManager(), binding.fabricIndex, binding.nodeId, &req_handle);
-            s_subscribe_pending = false;
-            break;
-        }
-    }
-    break;
+        try_subscribe_to_bound_thermostat();
+        break;
 
     default:
         break;

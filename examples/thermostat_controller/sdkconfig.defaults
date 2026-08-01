@@ -18,6 +18,9 @@ CONFIG_PARTITION_TABLE_OFFSET=0xC000
 # Enable chip shell
 CONFIG_ENABLE_CHIP_SHELL=y
 
+# Project-specific CHIP config overrides (Basic Information ProductName, etc.)
+CONFIG_CHIP_PROJECT_CONFIG="main/matter_project_config.h"
+
 # This example only uses 1 dynamic endpoint. Kept at 2 (rather than 1) because the
 # (unused) bridge component computes MAX_BRIDGED_DEVICE_COUNT as
 # (CONFIG_ESP_MATTER_MAX_DYNAMIC_ENDPOINT_COUNT - 1 - CONFIG_ESP_MATTER_AGGREGATOR_ENDPOINT_COUNT),
