@@ -33,15 +33,53 @@ using namespace esp_matter;
 using namespace esp_matter::attribute;
 using namespace esp_matter::endpoint;
 
-/* Once bound, we only need to subscribe to the remote thermostat's ThermostatRunningState
- * attribute a single time. */
+/* Once bound, we only need to subscribe to the remote thermostat's attributes a single
+ * time. This is set back to true on every reboot: the binding table itself persists in
+ * NVS across reboots, but the in-RAM subscription (ReadClient) does not, so it has to be
+ * re-established on every boot, not just the first time the binding is written. */
 static bool s_subscribe_pending = true;
+
+/* Scan the (persisted) binding table for a bound Thermostat and, if found and not already
+ * subscribed, connect to it and trigger app_driver_subscribe_thermostat_attributes() (via
+ * the client request callback). Called both when the binding table changes live (fresh
+ * `binding write`) and once connectivity comes up after boot, to also cover a binding that
+ * was already present in NVS from a previous session. */
+static void try_subscribe_to_bound_thermostat()
+{
+    if (!s_subscribe_pending) {
+        return;
+    }
+    for (const auto &binding : chip::app::Clusters::Binding::Table::GetInstance()) {
+        if (binding.type != chip::app::Clusters::Binding::MATTER_UNICAST_BINDING ||
+            binding.clusterId.value_or(0) != chip::app::Clusters::Thermostat::Id) {
+            continue;
+        }
+        ESP_LOGI(TAG, "Bound to thermostat nodeId=0x" ChipLogFormatX64 " endpoint=%d, subscribing to "
+                "ThermostatRunningState/LocalTemperature/OccupiedHeatingSetpoint",
+                ChipLogValueX64(binding.nodeId), binding.remote);
+
+        /* Only the endpoint/cluster carried here matter: app_driver_subscribe_thermostat_attributes()
+         * builds the actual (multi-attribute) subscription path list from them. */
+        client::request_handle_t req_handle;
+        req_handle.type = esp_matter::client::SUBSCRIBE_ATTR;
+        req_handle.attribute_path = {binding.remote, binding.clusterId.value(),
+                                     chip::app::Clusters::Thermostat::Attributes::ThermostatRunningState::Id};
+        auto &server = chip::Server::GetInstance();
+        client::connect(server.GetCASESessionManager(), binding.fabricIndex, binding.nodeId, &req_handle);
+        s_subscribe_pending = false;
+        break;
+    }
+}
 
 static void app_event_cb(const ChipDeviceEvent *event, intptr_t arg)
 {
     switch (event->Type) {
     case chip::DeviceLayer::DeviceEventType::kInterfaceIpAddressChanged:
         ESP_LOGI(TAG, "Interface IP Address Changed");
+        /* Covers the case where the device already had a bound thermostat in NVS before
+         * this boot: the binding table itself is not "changed" on reboot, so
+         * kBindingsChangedViaCluster below would never fire for it. */
+        try_subscribe_to_bound_thermostat();
         break;
 
     case chip::DeviceLayer::DeviceEventType::kCommissioningComplete:
