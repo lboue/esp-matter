@@ -1,4 +1,9 @@
 dependencies:
+  # Required transitively by esp_webrtc_utils/webrtc_bridge for the esp32p4
+  # target regardless of network transport; the component graph doesn't
+  # resolve cleanly without an explicit top-level requirement here even
+  # though this example doesn't call into esp_hosted itself (Ethernet-only,
+  # no C6 co-processor, no Wi-Fi/BLE-over-hosted).
   espressif/esp_hosted:
     override_path: ${KVS_SDK_PATH}/components/esp_hosted
     version: "*"
