@@ -1,0 +1,465 @@
+/*
+ *
+ *    Copyright (c) 2026 Project CHIP Authors
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
+/**
+ *  DRAFT scaffold -- esp-matter issue #1825 (Wi-Fi-only commissioning).
+ *
+ *  ESP32 platform binding for the Wi-Fi NAN Unsynchronized Service Discovery
+ *  (USD) / Public Action Frame (PAF) commissioning transport, i.e. Matter
+ *  1.4.2's Wi-Fi-only commissioning. Mirrors the shape of
+ *  src/platform/Linux/ConnectivityManagerImpl_WiFiPafWpaSupplicant.cpp
+ *  method-for-method, but drives ESP-IDF's esp_wifi_nan_*() NAN-USD API
+ *  directly instead of wpa_supplicant over D-Bus.
+ *
+ *  NOT build-validated. Known open items, tracked in esp-matter's
+ *  notes/issue-1825-wifi-only-commissioning.md:
+ *
+ *   - src/platform/device.gni currently restricts chip_device_config_enable_wifipaf
+ *     to chip_device_platform == "linux". That gate -- and the corresponding
+ *     esp-matter-side gn args plus src/platform/ESP32/BUILD.gn wiring -- needs to
+ *     be flipped on for esp32 before any of this compiles in.
+ *   - ESP-IDF has no publish/subscribe "terminated" event (unlike wpa_supplicant's
+ *     D-Bus "nan{publish,subscribe}-terminated" signals), so session cleanup here
+ *     is purely caller-driven (Cancel*/Shutdown) rather than event-driven. A TTL
+ *     expiry on the ESP-IDF side with no corresponding callback is an open gap.
+ *   - _WiFiPafSetApFreq()/mApFreq carries a frequency in MHz (matching the Linux
+ *     D-Bus API), but ESP-IDF's usd_default_channel wants a channel number --
+ *     FreqMhzToChannel() below is a placeholder needing a real mapping (and
+ *     ideally a shared discovery-channel policy, not a hardcoded default).
+ *   - Not validated against real NAN-USD radio behavior yet -- see
+ *     notes/wifipaf_mtu_spike/ for the multi-fragment timing/reliability spike
+ *     this should be run against first.
+ */
+
+#include <cstring>
+
+#include <lib/support/CHIPMemString.h>
+#include <lib/support/logging/CHIPLogging.h>
+#include <platform/CommissionableDataProvider.h>
+#include <platform/ConnectivityManager.h>
+#include <platform/DeviceInstanceInfoProvider.h>
+#include <platform/PlatformManager.h>
+
+#include "ConnectivityManagerImpl.h"
+
+#if CHIP_DEVICE_CONFIG_ENABLE_WIFIPAF
+
+using namespace ::chip::WiFiPAF;
+
+namespace chip {
+namespace DeviceLayer {
+
+namespace {
+
+// Matches the Matter DNS-SD service name used for on-network commissioning;
+// re-used here as the NAN-USD service name, same as the Linux binding.
+constexpr char kPafServiceName[] = "_matterc._udp";
+
+// NAN-USD Service Protocol Type. Ref: Table 58 of the Wi-Fi Aware specification.
+enum NanServiceProtocolType
+{
+    kNanSrvProtoBonjour   = 1,
+    kNanSrvProtoGeneric   = 2,
+    kNanSrvProtoCsaMatter = 3,
+};
+
+#pragma pack(push, 1)
+struct PafPublishSsi
+{
+    uint8_t DevOpCode;
+    uint16_t DevInfo; // Setup discriminator
+    uint16_t ProductId;
+    uint16_t VendorId;
+};
+#pragma pack(pop)
+
+// TODO: ESP-IDF's usd_default_channel is a Wi-Fi channel number (1-13), while
+// Linux's mApFreq (set via _WiFiPafSetApFreq) is a frequency in MHz -- these
+// aren't the same unit. Placeholder 2.4 GHz mapping only; needs a real
+// conversion (and 5/6 GHz handling) before this is anything but a stand-in.
+uint8_t FreqMhzToChannel(uint16_t freqMhz)
+{
+    if (freqMhz == 0)
+    {
+        return 6; // ESP-IDF stock USD examples default to channel 6.
+    }
+    if (freqMhz >= 2412 && freqMhz <= 2484)
+    {
+        return static_cast<uint8_t>((freqMhz - 2407) / 5);
+    }
+    ChipLogError(DeviceLayer, "WiFi-PAF: freq %u MHz outside the 2.4 GHz placeholder mapping, using channel 6", freqMhz);
+    return 6;
+}
+
+void BuildOwnSsi(PafPublishSsi & ssi, uint16_t discriminator)
+{
+    ssi.DevOpCode = 0;
+    ssi.DevInfo   = discriminator;
+    if (DeviceLayer::GetDeviceInstanceInfoProvider()->GetProductId(ssi.ProductId) != CHIP_NO_ERROR)
+    {
+        ssi.ProductId = 0;
+    }
+    if (DeviceLayer::GetDeviceInstanceInfoProvider()->GetVendorId(ssi.VendorId) != CHIP_NO_ERROR)
+    {
+        ssi.VendorId = 0;
+    }
+}
+
+} // namespace
+
+CHIP_ERROR ConnectivityManagerImpl::InitWiFiPAF(void)
+{
+    if (mNanReplyEventHandle != nullptr)
+    {
+        return CHIP_NO_ERROR; // Already started.
+    }
+
+    esp_err_t err = esp_wifi_start();
+    if (err != ESP_OK && err != ESP_ERR_WIFI_NOT_STOPPED)
+    {
+        ChipLogError(DeviceLayer, "WiFi-PAF: esp_wifi_start() failed: %s", esp_err_to_name(err));
+        return CHIP_ERROR_INTERNAL;
+    }
+
+    err = esp_wifi_nan_usd_start();
+    if (err != ESP_OK)
+    {
+        ChipLogError(DeviceLayer, "WiFi-PAF: esp_wifi_nan_usd_start() failed: %s", esp_err_to_name(err));
+        return CHIP_ERROR_INTERNAL;
+    }
+
+    if (esp_event_handler_instance_register(WIFI_EVENT, WIFI_EVENT_NAN_REPLIED, &ConnectivityManagerImpl::NanEventHandler,
+                                            nullptr, &mNanReplyEventHandle) != ESP_OK ||
+        esp_event_handler_instance_register(WIFI_EVENT, WIFI_EVENT_NAN_SVC_MATCH, &ConnectivityManagerImpl::NanEventHandler,
+                                            nullptr, &mNanMatchEventHandle) != ESP_OK ||
+        esp_event_handler_instance_register(WIFI_EVENT, WIFI_EVENT_NAN_RECEIVE, &ConnectivityManagerImpl::NanEventHandler,
+                                            nullptr, &mNanReceiveEventHandle) != ESP_OK)
+    {
+        ChipLogError(DeviceLayer, "WiFi-PAF: failed to register NAN event handlers");
+        return CHIP_ERROR_INTERNAL;
+    }
+
+    return CHIP_NO_ERROR;
+}
+
+void ConnectivityManagerImpl::NanEventHandler(void * arg, esp_event_base_t eventBase, int32_t eventId, void * eventData)
+{
+    (void) arg;
+    (void) eventBase;
+    switch (eventId)
+    {
+    case WIFI_EVENT_NAN_REPLIED:
+        ConnectivityMgrImpl().OnNanReplied(reinterpret_cast<wifi_event_nan_replied_t *>(eventData));
+        break;
+    case WIFI_EVENT_NAN_SVC_MATCH:
+        ConnectivityMgrImpl().OnNanSvcMatch(reinterpret_cast<wifi_event_nan_svc_match_t *>(eventData));
+        break;
+    case WIFI_EVENT_NAN_RECEIVE:
+        ConnectivityMgrImpl().OnNanReceive(reinterpret_cast<wifi_event_nan_receive_t *>(eventData));
+        break;
+    default:
+        break;
+    }
+}
+
+CHIP_ERROR ConnectivityManagerImpl::_WiFiPAFPublish(WiFiPAFAdvertiseParam & args)
+{
+    ReturnErrorOnFailure(InitWiFiPAF());
+
+    PafPublishSsi ssi;
+    uint16_t discriminator;
+    SuccessOrDie(DeviceLayer::GetCommissionableDataProvider()->GetSetupDiscriminator(discriminator));
+    BuildOwnSsi(ssi, discriminator);
+
+    wifi_nan_publish_cfg_t publishCfg = {};
+    chip::Platform::CopyString(publishCfg.service_name, sizeof(publishCfg.service_name), kPafServiceName);
+    publishCfg.ssi                = reinterpret_cast<uint8_t *>(&ssi);
+    publishCfg.ssi_len            = sizeof(ssi);
+    publishCfg.ttl                = CHIP_DEVICE_CONFIG_WIFIPAF_MAX_ADVERTISING_TIMEOUT_SECS;
+    publishCfg.usd_discovery_flag = 1;
+    publishCfg.usd_publish_config = esp_wifi_usd_get_default_publish_cfg();
+
+    uint8_t publishId = esp_wifi_nan_publish_service(&publishCfg);
+    if (publishId == 0)
+    {
+        ChipLogError(DeviceLayer, "WiFi-PAF: publishing '%s' failed", kPafServiceName);
+        return CHIP_ERROR_INTERNAL;
+    }
+    ChipLogProgress(DeviceLayer, "WiFi-PAF: publish_id: %u", publishId);
+
+    WiFiPAFSession sessionInfo = { .role = WiFiPafRole::kWiFiPafRole_Publisher, .id = publishId };
+    WiFiPAFLayer & pafLayer    = WiFiPAFLayer::GetWiFiPAFLayer();
+    ReturnErrorOnFailure(pafLayer.AddPafSession(PafInfoAccess::kAccSessionId, sessionInfo));
+    args.publish_id = publishId;
+
+    return CHIP_NO_ERROR;
+}
+
+CHIP_ERROR ConnectivityManagerImpl::_WiFiPAFCancelPublish(uint32_t PublishId)
+{
+    ChipLogProgress(DeviceLayer, "WiFi-PAF: cancel publish_id: %u", PublishId);
+    esp_err_t err = esp_wifi_nan_cancel_service(static_cast<uint8_t>(PublishId));
+    if (err != ESP_OK)
+    {
+        ChipLogError(DeviceLayer, "WiFi-PAF: esp_wifi_nan_cancel_service(%u) failed: %s", PublishId, esp_err_to_name(err));
+        return CHIP_ERROR_INTERNAL;
+    }
+    return CHIP_NO_ERROR;
+}
+
+void ConnectivityManagerImpl::_WiFiPAFSetParam(const WiFiPAFAdvertiseParam & pafAdvParam)
+{
+    mPafAdvParam.freq_list_len = pafAdvParam.freq_list_len;
+    mPafAdvParam.freq_list     = std::make_unique<uint16_t[]>(mPafAdvParam.freq_list_len);
+    for (size_t i = 0; i < mPafAdvParam.freq_list_len; i++)
+    {
+        mPafAdvParam.freq_list[i] = pafAdvParam.freq_list[i];
+    }
+}
+
+CHIP_ERROR ConnectivityManagerImpl::_SetWiFiPAFAdvertisingEnabled(bool enabled, uint32_t & publishId)
+{
+    if (enabled)
+    {
+        VerifyOrReturnError(mPafAdvParam.freq_list_len > 0, CHIP_ERROR_INCORRECT_STATE);
+        CHIP_ERROR res = _WiFiPAFPublish(mPafAdvParam);
+        if (res == CHIP_NO_ERROR && mPafAdvParam.publish_id != kUndefinedWiFiPafSessionId)
+        {
+            publishId = mPafAdvParam.publish_id;
+        }
+        return res;
+    }
+    VerifyOrReturnError((publishId != 0) && (publishId != kUndefinedWiFiPafSessionId), CHIP_ERROR_INCORRECT_STATE);
+    return _WiFiPAFCancelPublish(publishId);
+}
+
+CHIP_ERROR ConnectivityManagerImpl::_WiFiPAFSubscribe(const uint16_t & connDiscriminator, void * appState,
+                                                      OnConnectionCompleteFunct onSuccess, OnConnectionErrorFunct onError)
+{
+    ReturnErrorOnFailure(InitWiFiPAF());
+    ChipLogProgress(DeviceLayer, "WiFi-PAF: subscribing for discriminator %u", connDiscriminator);
+
+    mAppState = appState;
+    PafPublishSsi ssi;
+    BuildOwnSsi(ssi, connDiscriminator); // The discriminator being searched for, not our own.
+
+    wifi_nan_subscribe_cfg_t subscribeCfg = {};
+    chip::Platform::CopyString(subscribeCfg.service_name, sizeof(subscribeCfg.service_name), kPafServiceName);
+    subscribeCfg.ssi                                   = reinterpret_cast<uint8_t *>(&ssi);
+    subscribeCfg.ssi_len                               = sizeof(ssi);
+    subscribeCfg.ttl                                   = CHIP_DEVICE_CONFIG_WIFIPAF_DISCOVERY_TIMEOUT_SECS;
+    subscribeCfg.usd_discovery_flag                    = 1;
+    subscribeCfg.usd_subscribe_config                  = esp_wifi_usd_get_default_subscribe_cfg();
+    subscribeCfg.usd_subscribe_config.usd_default_channel = FreqMhzToChannel(mApFreq);
+
+    uint8_t subscribeId = esp_wifi_nan_subscribe_service(&subscribeCfg);
+    if (subscribeId == 0)
+    {
+        ChipLogError(DeviceLayer, "WiFi-PAF: subscribing to '%s' failed", kPafServiceName);
+        return CHIP_ERROR_INTERNAL;
+    }
+    ChipLogProgress(DeviceLayer, "WiFi-PAF: subscribe_id: %u", subscribeId);
+
+    mOnPafSubscribeComplete = onSuccess;
+    mOnPafSubscribeError    = onError;
+
+    WiFiPAFSession sessionInfo = { .discriminator = connDiscriminator };
+    WiFiPAFLayer & pafLayer    = WiFiPAFLayer::GetWiFiPAFLayer();
+    WiFiPAFSession * pPafInfo  = pafLayer.GetPAFInfo(PafInfoAccess::kAccDisc, sessionInfo);
+    if (pPafInfo != nullptr)
+    {
+        pPafInfo->id   = subscribeId;
+        pPafInfo->role = WiFiPafRole::kWiFiPafRole_Subscriber;
+    }
+
+    return CHIP_NO_ERROR;
+}
+
+CHIP_ERROR ConnectivityManagerImpl::_WiFiPAFCancelSubscribe(uint32_t SubscribeId)
+{
+    ChipLogProgress(DeviceLayer, "WiFi-PAF: cancel subscribe_id: %u", SubscribeId);
+    esp_err_t err = esp_wifi_nan_cancel_service(static_cast<uint8_t>(SubscribeId));
+    if (err != ESP_OK)
+    {
+        ChipLogError(DeviceLayer, "WiFi-PAF: esp_wifi_nan_cancel_service(%u) failed: %s", SubscribeId, esp_err_to_name(err));
+    }
+    return CHIP_NO_ERROR; // Matches Linux: cancel is best-effort from the caller's point of view.
+}
+
+CHIP_ERROR ConnectivityManagerImpl::_WiFiPAFCancelIncompleteSubscribe()
+{
+    mOnPafSubscribeComplete = nullptr;
+    mOnPafSubscribeError    = nullptr;
+    return CHIP_NO_ERROR;
+}
+
+CHIP_ERROR ConnectivityManagerImpl::_WiFiPAFSend(const WiFiPAF::WiFiPAFSession & TxInfo, chip::System::PacketBufferHandle && msgBuf)
+{
+    ChipLogProgress(DeviceLayer, "WiFi-PAF: sending PAF follow-up (%zu bytes)", msgBuf->DataLength());
+
+    if (msgBuf.IsNull())
+    {
+        ChipLogError(DeviceLayer, "WiFi-PAF: invalid (null) packet");
+        return CHIP_ERROR_INVALID_ARGUMENT;
+    }
+
+    // As with the Linux binding: the message must fit in a single contiguous
+    // buffer, as required by the fragmentation/reassembly engine (PAFTP).
+    if (msgBuf->HasChainedBuffer())
+    {
+        msgBuf->CompactHead();
+        if (msgBuf->HasChainedBuffer())
+        {
+            ChipLogError(DeviceLayer, "WiFi-PAF: outbound message too big (%zu), dropping", msgBuf->DataLength());
+            return CHIP_ERROR_OUTBOUND_MESSAGE_TOO_BIG;
+        }
+    }
+
+    wifi_nan_followup_params_t fupParams = {};
+    fupParams.inst_id                    = static_cast<uint8_t>(TxInfo.id);
+    fupParams.peer_inst_id               = static_cast<uint8_t>(TxInfo.peer_id);
+    fupParams.ssi                        = msgBuf->Start();
+    fupParams.ssi_len                    = static_cast<uint16_t>(msgBuf->DataLength());
+    memcpy(fupParams.peer_mac, TxInfo.peer_addr, sizeof(fupParams.peer_mac));
+
+    esp_err_t err = esp_wifi_nan_send_message(&fupParams);
+    bool result   = (err == ESP_OK);
+    if (!result)
+    {
+        ChipLogError(DeviceLayer, "WiFi-PAF: esp_wifi_nan_send_message failed: %s", esp_err_to_name(err));
+    }
+
+    ChipDeviceEvent event{ .Type = DeviceEventType::kCHIPoWiFiPAFWriteDone };
+    event.CHIPoWiFiPAFReceived.SessionInfo = TxInfo;
+    event.CHIPoWiFiPAFReceived.result      = result;
+    PlatformMgr().PostEventOrDie(&event);
+
+    return result ? CHIP_NO_ERROR : CHIP_ERROR_INTERNAL;
+}
+
+CHIP_ERROR ConnectivityManagerImpl::_WiFiPAFShutdown(uint32_t id, WiFiPafRole role)
+{
+    VerifyOrReturnError((id != kUndefinedWiFiPafSessionId) && (id != 0), CHIP_ERROR_INTERNAL);
+    switch (role)
+    {
+    case WiFiPafRole::kWiFiPafRole_Publisher:
+        return _WiFiPAFCancelPublish(id);
+    case WiFiPafRole::kWiFiPafRole_Subscriber:
+        return _WiFiPAFCancelSubscribe(id);
+    }
+    return CHIP_ERROR_INTERNAL;
+}
+
+// Publisher side: a subscriber matched (replied to) our published service.
+// Equivalent to the Linux binding's OnReplied(); event carries the SUBSCRIBER's SSI.
+void ConnectivityManagerImpl::OnNanReplied(const wifi_event_nan_replied_t * evt)
+{
+    if (evt == nullptr || evt->ssi_len < sizeof(PafPublishSsi))
+    {
+        return;
+    }
+    auto * peerSsi = reinterpret_cast<const PafPublishSsi *>(evt->ssi);
+
+    uint16_t ourDiscriminator;
+    TEMPORARY_RETURN_IGNORED DeviceLayer::GetCommissionableDataProvider()->GetSetupDiscriminator(ourDiscriminator);
+    if (peerSsi->DevInfo != ourDiscriminator)
+    {
+        ChipLogProgress(DeviceLayer, "WiFi-PAF: OnNanReplied, mismatched discriminator, got %u, ours: %u", peerSsi->DevInfo,
+                        ourDiscriminator);
+        return;
+    }
+
+    WiFiPAFSession sessionInfo = { .id = evt->publish_id };
+    WiFiPAFLayer & pafLayer    = WiFiPAFLayer::GetWiFiPAFLayer();
+    WiFiPAFSession * pPafInfo  = pafLayer.GetPAFInfo(PafInfoAccess::kAccSessionId, sessionInfo);
+    if (pPafInfo == nullptr)
+    {
+        ChipLogError(DeviceLayer, "WiFi-PAF: OnNanReplied, no session for publish_id: %u", evt->publish_id);
+        return;
+    }
+
+    pPafInfo->role    = WiFiPafRole::kWiFiPafRole_Publisher;
+    pPafInfo->id      = evt->publish_id;
+    pPafInfo->peer_id = evt->subscribe_id;
+    memcpy(pPafInfo->peer_addr, evt->sub_if_mac, sizeof(pPafInfo->peer_addr));
+    TEMPORARY_RETURN_IGNORED pafLayer.HandleTransportConnectionInitiated(*pPafInfo);
+}
+
+// Subscriber side: we matched a publisher we were looking for.
+// Equivalent to the Linux binding's OnDiscoveryResult(); event carries the PUBLISHER's SSI.
+void ConnectivityManagerImpl::OnNanSvcMatch(const wifi_event_nan_svc_match_t * evt)
+{
+    if (evt == nullptr || evt->ssi_len < sizeof(PafPublishSsi))
+    {
+        return;
+    }
+    auto * peerSsi = reinterpret_cast<const PafPublishSsi *>(evt->ssi);
+
+    WiFiPAFSession sessionInfo = { .discriminator = peerSsi->DevInfo };
+    WiFiPAFLayer & pafLayer    = WiFiPAFLayer::GetWiFiPAFLayer();
+    WiFiPAFSession * pPafInfo  = pafLayer.GetPAFInfo(PafInfoAccess::kAccDisc, sessionInfo);
+    if (pPafInfo == nullptr)
+    {
+        ChipLogError(DeviceLayer, "WiFi-PAF: OnNanSvcMatch, no pending session for discriminator: %u", peerSsi->DevInfo);
+        return;
+    }
+    if (pPafInfo->id == evt->subscribe_id && pPafInfo->peer_id != UINT32_MAX)
+    {
+        ChipLogError(DeviceLayer, "WiFi-PAF: OnNanSvcMatch, reentrance for subscribe_id: %u", evt->subscribe_id);
+        return;
+    }
+
+    pPafInfo->role    = WiFiPafRole::kWiFiPafRole_Subscriber;
+    pPafInfo->id      = evt->subscribe_id;
+    pPafInfo->peer_id = evt->publish_id;
+    memcpy(pPafInfo->peer_addr, evt->pub_if_mac, sizeof(pPafInfo->peer_addr));
+
+    ChipDeviceEvent event{ .Type = DeviceEventType::kCHIPoWiFiPAFConnected };
+    event.CHIPoWiFiPAFReceived.SessionInfo = *pPafInfo;
+    PlatformMgr().PostEventOrDie(&event);
+}
+
+// Both sides: a PAFTP fragment (or standalone message) arrived over a follow-up frame.
+void ConnectivityManagerImpl::OnNanReceive(const wifi_event_nan_receive_t * evt)
+{
+    if (evt == nullptr)
+    {
+        return;
+    }
+
+    WiFiPAFSession rxInfo = {};
+    rxInfo.id             = evt->inst_id;
+    rxInfo.peer_id        = evt->peer_inst_id;
+    memcpy(rxInfo.peer_addr, evt->peer_if_mac, sizeof(rxInfo.peer_addr));
+
+    System::PacketBufferHandle buf = System::PacketBufferHandle::NewWithData(evt->ssi, evt->ssi_len);
+    if (buf.IsNull())
+    {
+        ChipLogError(DeviceLayer, "WiFi-PAF: OnNanReceive, failed to allocate a %u-byte buffer", evt->ssi_len);
+        return;
+    }
+
+    ChipDeviceEvent event{ .Type                 = DeviceEventType::kCHIPoWiFiPAFReceived,
+                           .CHIPoWiFiPAFReceived = { .Data = std::move(buf).UnsafeRelease() } };
+    event.CHIPoWiFiPAFReceived.SessionInfo = rxInfo;
+    PlatformMgr().PostEventOrDie(&event);
+}
+
+} // namespace DeviceLayer
+} // namespace chip
+
+#endif // CHIP_DEVICE_CONFIG_ENABLE_WIFIPAF
