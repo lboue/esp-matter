@@ -1,0 +1,37 @@
+menu "Example Configuration"
+
+    config ESP_WIFI_USD_SUB_SVC_NAME
+        string "USD subscribe service name"
+        default "ESP-PAF-SPIKE"
+
+    config ESP_WIFI_USD_SUB_TTL
+        int "Time to live (in seconds)"
+        range 0 1000
+        default 100
+        help
+            Time to live of the Subscribe instance, in seconds.
+
+    config ESP_WIFI_USD_DEFAULT_CHAN
+        int "Default Subscribe channel"
+        range 1 13
+        default 6
+        help
+            Default channel of subscriber
+
+    config PAF_SPIKE_FRAG_COUNT
+        int "Expected fragment count"
+        range 1 64
+        default 6
+        help
+            How many fragments to wait for before printing the summary. Must
+            match the publisher's PAF_SPIKE_FRAG_COUNT.
+
+    config PAF_SPIKE_FRAG_TIMEOUT_MS
+        int "Per-burst timeout (ms)"
+        range 100 60000
+        default 5000
+        help
+            How long to wait, after the trigger is sent, for the whole burst
+            to arrive before giving up and printing a partial summary.
+
+endmenu

@@ -1,0 +1,30 @@
+menu "Example Configuration"
+
+    config ESP_WIFI_USD_PUB_SVC_NAME
+        string "USD publish service name"
+        default "ESP-PAF-SPIKE"
+
+    config ESP_WIFI_USD_PUB_TTL
+        int "Time to live (in seconds)"
+        range 0 1000
+        default 100
+        help
+            Time to live of the Publish instance, in seconds.
+
+    config PAF_SPIKE_FRAG_SIZE
+        int "Fragment size (bytes)"
+        range 16 2048
+        default 350
+        help
+            Payload size of each follow-up fragment, in bytes. Default matches
+            connectedhomeip's CHIP_PAF_DEFAULT_MTU (WiFiPAFConfig.h).
+
+    config PAF_SPIKE_FRAG_COUNT
+        int "Fragment count"
+        range 1 64
+        default 6
+        help
+            Number of back-to-back follow-up fragments sent once triggered by
+            the subscriber. 6 x 350 B ~= 2.1 KB, roughly a real PASE message.
+
+endmenu

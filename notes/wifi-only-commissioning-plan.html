@@ -1,0 +1,573 @@
+<title>Wi-Fi-Only Commissioning</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --paper: #eef1ef;
+    --paper-raised: #ffffff;
+    --ink: #12181a;
+    --ink-soft: #45524f;
+    --ink-faint: #6d7a76;
+    --line: #ccd3d0;
+    --line-soft: #dde2e0;
+    --accent: #0d8a7c;
+    --accent-ink: #ffffff;
+    --accent-soft: #d9efec;
+    --amber: #a2650f;
+    --amber-soft: #f4e3cc;
+    --slate: #52646d;
+    --slate-soft: #e2e8ea;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper: #10151a;
+      --paper-raised: #171e24;
+      --ink: #eef2f0;
+      --ink-soft: #aab8b4;
+      --ink-faint: #7c8b87;
+      --line: #2b3339;
+      --line-soft: #232b30;
+      --accent: #3fd0bc;
+      --accent-ink: #072320;
+      --accent-soft: #123a35;
+      --amber: #e3a25a;
+      --amber-soft: #3a2c17;
+      --slate: #9db0b8;
+      --slate-soft: #1d262b;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper: #10151a;
+    --paper-raised: #171e24;
+    --ink: #eef2f0;
+    --ink-soft: #aab8b4;
+    --ink-faint: #7c8b87;
+    --line: #2b3339;
+    --line-soft: #232b30;
+    --accent: #3fd0bc;
+    --accent-ink: #072320;
+    --accent-soft: #123a35;
+    --amber: #e3a25a;
+    --amber-soft: #3a2c17;
+    --slate: #9db0b8;
+    --slate-soft: #1d262b;
+  }
+
+  *{ box-sizing: border-box; }
+  body{
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page{
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 64px 24px 96px;
+  }
+  a{ color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, button:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .eyebrow{
+    font-family: "IBM Plex Sans Condensed", system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 12.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .eyebrow::before{
+    content: "";
+    width: 22px; height: 1px;
+    background: var(--accent);
+  }
+  h1{
+    font-family: "IBM Plex Sans Condensed", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: clamp(30px, 5vw, 42px);
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    margin: 14px 0 10px;
+    text-wrap: balance;
+  }
+  .dek{
+    font-size: 17.5px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    margin: 0 0 22px;
+    max-width: 62ch;
+  }
+  .meta{
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12.5px;
+    color: var(--ink-faint);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
+  .meta b{ color: var(--ink-soft); font-weight: 500; }
+
+  .verdict{
+    margin: 40px 0 8px;
+    padding: 20px 22px;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+  }
+  .verdict .label{
+    font-family: "IBM Plex Sans Condensed", sans-serif;
+    font-weight: 600;
+    font-size: 11.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 8px;
+  }
+  .verdict p{ margin: 0; font-size: 16px; line-height: 1.6; color: var(--ink); }
+
+  section{ margin-top: 52px; }
+  h2{
+    font-family: "IBM Plex Sans Condensed", sans-serif;
+    font-weight: 600;
+    font-size: 12.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  h3{
+    font-family: "IBM Plex Sans Condensed", sans-serif;
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--ink);
+    margin: 0 0 6px;
+  }
+  p{ font-size: 16px; line-height: 1.68; color: var(--ink-soft); margin: 0 0 14px; max-width: 66ch; }
+  p:last-child{ margin-bottom: 0; }
+  strong{ color: var(--ink); font-weight: 600; }
+  code, .file, .api{
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.85em;
+    background: var(--slate-soft);
+    color: var(--ink);
+    padding: 0.1em 0.4em;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+  .api{ background: var(--accent-soft); }
+
+  /* stack diagram */
+  .stack{
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--paper-raised);
+  }
+  .layer{
+    display: grid;
+    grid-template-columns: 148px 1fr;
+    border-top: 1px solid var(--line);
+  }
+  .layer:first-child{ border-top: none; }
+  .layer-name{
+    font-family: "IBM Plex Sans Condensed", sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--ink-faint);
+    padding: 16px 14px;
+    border-right: 1px solid var(--line-soft);
+    display: flex;
+    align-items: center;
+  }
+  .layer-cells{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px;
+  }
+  .chip{
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 11px;
+    border-radius: 4px;
+    border: 1px solid var(--line);
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px;
+    color: var(--ink);
+    background: var(--paper);
+  }
+  .dot{ width: 7px; height: 7px; border-radius: 50%; flex: none; }
+  .dot.exists{ background: var(--accent); }
+  .dot.missing{ background: var(--amber); }
+  .dot.unverified{ background: var(--slate); }
+
+  .legend{
+    display: flex; gap: 18px; flex-wrap: wrap;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11.5px; color: var(--ink-faint);
+    margin-top: 12px;
+  }
+  .legend span{ display: inline-flex; align-items: center; gap: 6px; }
+
+  /* table */
+  .twrap{ overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; }
+  table{ border-collapse: collapse; width: 100%; min-width: 640px; background: var(--paper-raised); }
+  thead th{
+    text-align: left;
+    font-family: "IBM Plex Sans Condensed", sans-serif;
+    font-weight: 600;
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--line);
+    background: var(--slate-soft);
+  }
+  tbody td{
+    padding: 12px 14px;
+    font-size: 14.5px;
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--line-soft);
+    vertical-align: top;
+  }
+  tbody tr:last-child td{ border-bottom: none; }
+  td.comp{ color: var(--ink); font-weight: 500; }
+  .pill{
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11.5px;
+    padding: 3px 9px 3px 7px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .pill.exists{ background: var(--accent-soft); color: var(--accent); }
+  .pill.missing{ background: var(--amber-soft); color: var(--amber); }
+  .pill.unverified{ background: var(--slate-soft); color: var(--slate); }
+  .pill .dot{ width: 6px; height: 6px; }
+  .pill.exists .dot{ background: var(--accent); }
+  .pill.missing .dot{ background: var(--amber); }
+  .pill.unverified .dot{ background: var(--slate); }
+
+  /* phases */
+  .phase{
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 4px 16px;
+    padding: 20px 0;
+    border-top: 1px solid var(--line-soft);
+  }
+  .phase:first-of-type{ border-top: none; padding-top: 0; }
+  .phase-num{
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 13px;
+    color: var(--accent);
+    padding-top: 2px;
+  }
+  .phase h3{ margin-bottom: 4px; }
+  .phase .tag{
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 10px;
+    display: block;
+  }
+  .phase ul{ margin: 10px 0 0; padding-left: 18px; }
+  .phase li{ font-size: 15px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 5px; }
+
+  ul.plain{ margin: 0; padding-left: 20px; }
+  ul.plain li{ font-size: 15.5px; line-height: 1.65; color: var(--ink-soft); margin-bottom: 10px; }
+
+  .cta{
+    margin-top: 52px;
+    padding: 24px 26px;
+    background: var(--accent-soft);
+    border-radius: 6px;
+  }
+  .cta h2{ border: none; color: var(--accent); padding: 0; margin-bottom: 10px; }
+  .cta p{ color: var(--ink); max-width: none; }
+
+  .sources{ margin-top: 52px; }
+  .sources ol{ margin: 0; padding-left: 20px; }
+  .sources li{ font-size: 13.5px; line-height: 1.7; color: var(--ink-faint); margin-bottom: 6px; }
+  .sources a{ color: var(--ink-soft); }
+
+  footer{
+    margin-top: 64px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11.5px;
+    color: var(--ink-faint);
+  }
+
+  @media (max-width: 560px){
+    .layer{ grid-template-columns: 1fr; }
+    .layer-name{ border-right: none; border-bottom: 1px solid var(--line-soft); }
+    .phase{ grid-template-columns: 1fr; }
+    .phase-num{ padding-top: 0; }
+  }
+</style>
+
+<div class="page">
+
+  <div class="eyebrow">espressif/esp-matter · issue #1825</div>
+  <h1>Wi-Fi-Only Commissioning via USD</h1>
+  <p class="dek">Feasibility assessment and phased implementation plan for supporting Matter&nbsp;1.4.2's Wi-Fi Unsynchronized Service Discovery (USD) commissioning flow — onboarding a device with no Bluetooth&nbsp;LE radio at all.</p>
+  <div class="meta">
+    <span><b>Prepared</b> 2026-08-21</span>
+    <span><b>chip submodule pin</b> efefc94f</span>
+    <span><b>esp-matter target IDF</b> v6.0.2</span>
+  </div>
+
+  <div class="verdict">
+    <span class="label">Verdict</span>
+    <p>Feasible, and less far off than it looks — but not a small PR. The two hardest prerequisites are already satisfied upstream: ESP-IDF's Wi-Fi radio driver already speaks NAN-USD, and connectedhomeip's core protocol engine and onboarding-payload plumbing for WiFiPAF already exist. What's actually missing is a full <strong>ESP32 platform binding</strong> in connectedhomeip (nobody has written it yet — only Linux has one) plus the <strong>esp-matter wiring</strong> on top of it. That's a real feature, best scoped as multiple phases and ideally contributed upstream rather than kept in Espressif's fork alone.</p>
+  </div>
+
+  <section>
+    <h2>What Matter 1.4.2 changed</h2>
+    <p>Today, esp-matter devices commission over one of two transports: <code>kBLE</code> (a BLE GATT rendezvous, then handoff to Wi-Fi) or <code>kOnNetwork</code> (the device is already on the IP network and gets discovered over mDNS — used for re-commissioning or same-network flows). Neither works for a device that has never joined Wi-Fi yet and has no BLE radio.</p>
+    <p>Matter 1.4.2 closes that gap using Wi-Fi's <strong>Unsynchronized Service Discovery (USD)</strong> — a lightweight publish/subscribe mechanism from the Wi-Fi Aware (NAN) family that lets two nearby devices find and exchange short messages over 802.11 without joining a network first. Connectedhomeip calls its implementation <strong>WiFiPAF</strong> (Wi-Fi Proximity Access Framework); the onboarding payload already carries a dedicated bit for it.</p>
+  </section>
+
+  <section>
+    <h2>Where the stack actually stands</h2>
+    <div class="stack">
+      <div class="layer">
+        <div class="layer-name">esp-matter</div>
+        <div class="layer-cells">
+          <span class="chip"><span class="dot missing"></span>Kconfig / discovery-capability wiring</span>
+          <span class="chip"><span class="dot missing"></span>BLE-less example app</span>
+          <span class="chip"><span class="dot exists"></span>fork already synced to a wifipaf-capable base</span>
+        </div>
+      </div>
+      <div class="layer">
+        <div class="layer-name">connectedhomeip</div>
+        <div class="layer-cells">
+          <span class="chip"><span class="dot exists"></span>src/wifipaf/ protocol engine</span>
+          <span class="chip"><span class="dot exists"></span>RendezvousInformationFlag::kWiFiPAF</span>
+          <span class="chip"><span class="dot exists"></span>Linux platform binding (wpa_supplicant)</span>
+          <span class="chip"><span class="dot missing"></span>ESP32 platform binding</span>
+        </div>
+      </div>
+      <div class="layer">
+        <div class="layer-name">ESP-IDF / radio</div>
+        <div class="layer-cells">
+          <span class="chip"><span class="dot exists"></span>esp_wifi_nan_* driver</span>
+          <span class="chip"><span class="dot exists"></span>NAN-USD (usd_publisher / usd_subscriber)</span>
+          <span class="chip"><span class="dot unverified"></span>per-chip radio support matrix</span>
+        </div>
+      </div>
+    </div>
+    <div class="legend">
+      <span><span class="dot exists"></span>exists upstream</span>
+      <span><span class="dot missing"></span>needs to be built</span>
+      <span><span class="dot unverified"></span>needs verification</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Capability matrix</h2>
+    <div class="twrap">
+      <table>
+        <thead>
+          <tr><th>Component</th><th>Layer</th><th>Status</th><th>Evidence</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="comp">esp_wifi_nan_* driver</td>
+            <td>ESP-IDF</td>
+            <td><span class="pill exists"><span class="dot"></span>exists</span></td>
+            <td>NAN publish/subscribe/datapath types (<code>wifi_nan_publish_cfg_t</code>, <code>wifi_nan_subscribe_cfg_t</code>) present since ~v5.1.</td>
+          </tr>
+          <tr>
+            <td class="comp">NAN-USD examples</td>
+            <td>ESP-IDF</td>
+            <td><span class="pill exists"><span class="dot"></span>exists</span></td>
+            <td><code>examples/wifi/wifi_aware/usd_publisher</code> &amp; <code>usd_subscriber</code> ship in v6.0.2 — the exact IDF version esp-matter's README already recommends. Absent in v5.4.1 and the release/v5.5 branch, so this is genuinely new.</td>
+          </tr>
+          <tr>
+            <td class="comp">WiFiPAF protocol engine</td>
+            <td>connectedhomeip core</td>
+            <td><span class="pill exists"><span class="dot"></span>exists</span></td>
+            <td><code class="file">src/wifipaf/</code> — <code class="api">WiFiPAFLayer</code>, <code class="api">WiFiPAFEndPoint</code>, <code class="api">WiFiPAFTP</code>. Landed via upstream PR&nbsp;<a href="https://github.com/project-chip/connectedhomeip/pull/34764" target="_blank" rel="noopener">#34764</a> and related work.</td>
+          </tr>
+          <tr>
+            <td class="comp">Onboarding payload bit</td>
+            <td>connectedhomeip core</td>
+            <td><span class="pill exists"><span class="dot"></span>exists</span></td>
+            <td><code class="api">RendezvousInformationFlag::kWiFiPAF</code> already defined in <code class="file">src/setup_payload/SetupPayload.h</code>, alongside <code>kBLE</code>/<code>kOnNetwork</code>/<code>kSoftAP</code>.</td>
+          </tr>
+          <tr>
+            <td class="comp">Linux platform binding</td>
+            <td>connectedhomeip platform</td>
+            <td><span class="pill exists"><span class="dot"></span>exists</span></td>
+            <td><code class="file">ConnectivityManagerImpl_WiFiPafWpaSupplicant.cpp</code> — delegates to <code>wpa_supplicant</code>. Validated on Raspberry Pi against NAN-capable adapters.</td>
+          </tr>
+          <tr>
+            <td class="comp">ESP32 platform binding</td>
+            <td>connectedhomeip platform</td>
+            <td><span class="pill missing"><span class="dot"></span>missing</span></td>
+            <td>Verified by cloning the pinned commit directly: no <code>WiFiPaf</code>-named file, no textual mention, and no <code>.gn</code> scaffolding anywhere under <code class="file">src/platform/ESP32/</code> or <code class="file">examples/platform/esp32/</code>. This is the core engineering gap.</td>
+          </tr>
+          <tr>
+            <td class="comp">Discovery-capability / Kconfig wiring</td>
+            <td>esp-matter</td>
+            <td><span class="pill missing"><span class="dot"></span>missing</span></td>
+            <td>esp-matter today only has <code class="api">CONFIG_USE_BLE_ONLY_FOR_COMMISSIONING</code> (<code class="file">esp_matter_core.cpp:170</code>), which shuts BLE down <em>after</em> commissioning — it doesn't offer WiFiPAF as an alternative rendezvous transport.</td>
+          </tr>
+          <tr>
+            <td class="comp">Espressif chip fork state</td>
+            <td>esp-matter submodule</td>
+            <td><span class="pill exists"><span class="dot"></span>confirmed</span></td>
+            <td>Verified by fetching the pinned commit <code>efefc94f</code> directly — the fork already carries <code class="file">src/wifipaf/</code> and <code class="api">kWiFiPAF</code> in full.</td>
+          </tr>
+          <tr>
+            <td class="comp">Per-chip NAN radio support</td>
+            <td>ESP-IDF / hardware</td>
+            <td><span class="pill exists"><span class="dot"></span>confirmed broad</span></td>
+            <td>ESP-IDF's own supported-targets table for <code>usd_publisher</code>/<code>usd_subscriber</code> lists ESP32, C2, C3, C5, C6, C61, S2 and S3 — no build-system target gating beyond the <code>CONFIG_ESP_WIFI_NAN_USD_ENABLE</code> Kconfig flag. NAN discovery runs over standard 802.11 action frames, not a Wi-Fi-6-specific mechanism, so this isn't limited to the newest radios.</td>
+          </tr>
+          <tr>
+            <td class="comp">Follow-up frame payload vs. PAFTP MTU</td>
+            <td>ESP-IDF ↔ connectedhomeip</td>
+            <td><span class="pill exists"><span class="dot"></span>compatible</span></td>
+            <td>PAFTP's fragment size is <code>CHIP_PAF_DEFAULT_MTU = 350</code> bytes (<code class="file">WiFiPAFConfig.h:150</code>), chosen against the Wi-Fi Aware spec's own "Supported Maximum Service Specific Info Length" (comment at <code class="file">WiFiPAFTP.cpp:70-72</code>). ESP-IDF's <code class="api">wifi_nan_followup_params_t.ssi</code> is a variable-length pointer, capped at <code>ESP_WIFI_MAX_FUP_SSI_LEN = 2048</code> bytes — comfortably above 350. Publish/subscribe SSI caps at <code>ESP_WIFI_MAX_SVC_SSI_LEN = 512</code>, also above it.</td>
+          </tr>
+          <tr>
+            <td class="comp">USD as a first-class discovery mode (vs. synced-NAN-only)</td>
+            <td>ESP-IDF</td>
+            <td><span class="pill exists"><span class="dot"></span>confirmed</span></td>
+            <td><code class="api">wifi_nan_publish_cfg_t</code> / <code class="api">wifi_nan_subscribe_cfg_t</code> carry a dedicated <code class="api">usd_discovery_flag</code> bit and an embedded <code class="api">wifi_nan_usd_config_t</code>. The shipped <code class="file">usd_publisher_example_main.c</code> (v6.0.2) sets <code>usd_discovery_flag = 1</code>, calls <code class="api">esp_wifi_nan_publish_service()</code>, and sends real payloads through <code class="api">esp_wifi_nan_send_message()</code> — a working, non-stub code path, not NAN-cluster-sync bolted on.</td>
+          </tr>
+          <tr>
+            <td class="comp">Commissioner-side support</td>
+            <td>out of scope (controller/mobile)</td>
+            <td><span class="pill unverified"><span class="dot"></span>unverified</span></td>
+            <td>chip-tool has some Linux-side pairing support; mainstream mobile commissioners (Apple Home, Google Home, Alexa) readiness is unconfirmed — tracked informally in <a href="https://github.com/orgs/home-assistant/discussions/1060" target="_blank" rel="noopener">home-assistant discussion #1060</a>.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Phased plan</h2>
+
+    <div class="phase">
+      <div class="phase-num">00</div>
+      <div>
+        <span class="tag">Scope · ~1–2 days</span>
+        <h3>Verify &amp; align</h3>
+        <p>Three of four open questions are now resolved; one remains.</p>
+        <ul>
+          <li><s>Check out <code>connectedhomeip/connectedhomeip</code> at the pinned SHA and confirm whether the upstream wifipaf core is already present.</s> — done: confirmed present (<code class="file">src/wifipaf/</code>, <code class="api">kWiFiPAF</code>), ESP32 binding confirmed absent.</li>
+          <li><s>Confirm the ESP-IDF NAN API isn't synced-cluster-only and that follow-up frames can actually carry PAFTP's fragment size.</s> — done: <code class="api">usd_discovery_flag</code> + <code class="api">wifi_nan_usd_config_t</code> make USD a first-class mode, and the 2048-byte follow-up SSI cap comfortably covers PAFTP's 350-byte MTU. Full numbers in the row above.</li>
+          <li><s>Confirm which target chips actually expose NAN/USD.</s> — done: ESP-IDF's own supported-targets table for the USD examples covers ESP32, C2, C3, C5, C6, C61, S2 and S3, gated only by a Kconfig flag, not per-chip build restrictions.</li>
+          <li>Still open — and now in progress: on-air timing/reliability. A header-level API check isn't a substitute for measuring a real multi-fragment follow-up exchange against PASE's retransmit/timeout budget. A standalone spike (burst of <code>CHIP_PAF_DEFAULT_MTU</code>-sized fragments over the stock <code>usd_publisher</code>/<code>usd_subscriber</code> examples, run on two ESP32-C6 boards) is the concrete next action before writing the platform binding.</li>
+          <li>Open a tracking discussion upstream in <code>project-chip/connectedhomeip</code> — an ESP32 WiFiPAF platform binding is exactly the kind of thing worth landing there instead of only in Espressif's fork, so it doesn't rot on every future sync.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-num">01</div>
+      <div>
+        <span class="tag">connectedhomeip · largest chunk</span>
+        <h3>ESP32 platform binding for WiFiPAF</h3>
+        <p>Mirror the Linux binding's shape, but drive ESP-IDF's NAN-USD C API instead of <code>wpa_supplicant</code>.</p>
+        <ul>
+          <li>New <code class="file">src/platform/ESP32/ConnectivityManagerImpl_WiFiPaf*.{h,cpp}</code>, implementing the same delegate interface as <code class="api">ConnectivityManagerImpl_WiFiPafInterface</code>.</li>
+          <li>Map WiFiPAF publish/subscribe/follow-up onto <code class="api">wifi_nan_publish_cfg_t</code>, <code class="api">wifi_nan_subscribe_cfg_t</code>, <code class="api">wifi_nan_followup_params_t</code>, and the <code class="api">wifi_event_nan_svc_match_t</code> / <code class="api">wifi_event_nan_receive_t</code> event callbacks.</li>
+          <li>Wire it into <code class="api">WiFiPAFLayerDelegate</code> so the existing protocol-agnostic engine (fragmentation, session lifecycle) is reused as-is.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-num">02</div>
+      <div>
+        <span class="tag">esp-matter</span>
+        <h3>Kconfig &amp; commissioning wiring</h3>
+        <ul>
+          <li>New Kconfig toggle (e.g. <code>CONFIG_ENABLE_WIFIPAF_COMMISSIONING</code>) analogous to the existing <code class="api">CONFIG_USE_BLE_ONLY_FOR_COMMISSIONING</code> pattern in <code class="file">esp_matter_core.cpp</code>.</li>
+          <li>Set <code class="api">kWiFiPAF</code> in the rendezvous/discovery-capabilities bitmask when generating the onboarding payload (mirrors how <code class="file">esp_matter_controller_commissioning_window_opener.cpp:95</code> sets <code>kOnNetwork</code> today).</li>
+          <li>Make the BLE stack fully excludable at build time when WiFiPAF is the chosen transport, not merely shut down post-commissioning.</li>
+          <li>Update <code>mfg_tool</code> QR/manual-code generation to reflect the new capability bit.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-num">03</div>
+      <div>
+        <span class="tag">Examples &amp; docs</span>
+        <h3>Reference implementation</h3>
+        <ul>
+          <li>A BLE-less commissioning path in an existing example (the <code>light</code> example, gated by the new Kconfig) rather than a brand-new example app.</li>
+          <li>Developer docs page walking through pairing with a NAN-USD-capable commissioner — realistically <code>chip-tool</code> on Linux first, since mobile-commissioner readiness is unconfirmed.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-num">04</div>
+      <div>
+        <span class="tag">Validation</span>
+        <h3>Test matrix</h3>
+        <ul>
+          <li>End-to-end pairing against <code>chip-tool</code> over a NAN-capable adapter, on ESP32-C6 first.</li>
+          <li>Regression pass confirming <code>kBLE</code> and <code>kOnNetwork</code> flows are untouched.</li>
+          <li>Certification implications flagged separately — a new commissioning transport likely needs test-plan coverage beyond code review.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Risks &amp; open questions</h2>
+    <ul class="plain">
+      <li><strong>Hardware scope.</strong> NAN/USD needs specific radio timing support; don't commit to "every ESP32 variant" until the per-chip matrix is confirmed. C6/C5/C61 are the safe first bet.</li>
+      <li><strong>Ecosystem readiness.</strong> Device-side support is necessary but not sufficient — the feature only helps end users once mainstream commissioner apps add WiFiPAF support. That's tracked loosely elsewhere (e.g. Home Assistant's own discussion) and is outside esp-matter's control.</li>
+      <li><strong>Upstream vs. fork.</strong> The ESP32 platform binding belongs in <code>project-chip/connectedhomeip</code>, not only in Espressif's fork — otherwise every fork sync risks re-losing it.</li>
+      <li><strong>Certification.</strong> A new rendezvous transport typically needs Matter test-plan (TE) coverage, which is a separate process from the code itself.</li>
+    </ul>
+  </section>
+
+  <div class="cta">
+    <h2>Recommended next step</h2>
+    <p>Post the findings above as a comment on issue #1825 — mainly to surface that the ESP-IDF radio layer and the connectedhomeip core protocol are already there, so the real ask is scoped down to "write the ESP32 platform binding + esp-matter wiring," and to ask maintainers whether Espressif already has this in progress internally before anyone starts Phase&nbsp;1 blind.</p>
+  </div>
+
+  <div class="sources">
+    <h2>Sources</h2>
+    <ol>
+      <li>CNX Software — <a href="https://www.cnx-software.com/2025/08/18/matter-1-4-2-adds-support-for-wifi-only-provisioning-for-cheaper-devices-improves-security-and-more/" target="_blank" rel="noopener">Matter 1.4.2 adds support for WiFi-only provisioning</a></li>
+      <li>Hackster.io — <a href="https://www.hackster.io/news/connectivity-standards-alliance-drops-bluetooth-le-for-wi-fi-only-provisioning-in-matter-1-4-2-29bd8e8e21d1" target="_blank" rel="noopener">CSA drops BLE for Wi-Fi-only provisioning in Matter 1.4.2</a></li>
+      <li>connectedhomeip — <a href="https://github.com/project-chip/connectedhomeip/pull/34764" target="_blank" rel="noopener">PR #34764, "Add PAFTP to Wi-Fi PAF commissioning"</a></li>
+      <li>connectedhomeip — <code class="file">src/wifipaf/</code>, <code class="file">src/setup_payload/SetupPayload.h</code>, <code class="file">src/platform/Linux/</code>, <code class="file">src/platform/ESP32/</code> (master branch)</li>
+      <li>ESP-IDF — <a href="https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/network/esp_nan.html" target="_blank" rel="noopener">Wi-Fi Aware (NAN) programming guide</a>; <code class="file">examples/wifi/wifi_aware/{usd_publisher,usd_subscriber}</code> (present in v6.0.2, absent in v5.5)</li>
+      <li>esp-matter — <code class="file">README.md:57</code>, <code class="file">components/esp_matter/esp_matter_core.cpp:170</code>, <code class="file">components/esp_matter_controller/commands/esp_matter_controller_commissioning_window_opener.cpp:95</code></li>
+      <li>Home Assistant — <a href="https://github.com/orgs/home-assistant/discussions/1060" target="_blank" rel="noopener">discussion #1060, Matter 1.4.2 Wi-Fi-only commissioning</a></li>
+    </ol>
+  </div>
+
+  <footer>esp-matter issue #1825 · feasibility &amp; implementation plan · not an official Espressif roadmap commitment</footer>
+
+</div>
