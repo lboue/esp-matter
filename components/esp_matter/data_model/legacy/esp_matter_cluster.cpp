@@ -184,6 +184,11 @@ cluster_t *create(endpoint_t *endpoint, config_t *config, uint8_t flags)
         attribute::create_specification_version(cluster, 0);
         attribute::create_max_paths_per_invoke(cluster, 0);
         attribute::create_configuration_version(cluster, 0);
+        // SerialNumber is ATTRIBUTE_FLAG_MANAGED_INTERNALLY like the other attributes
+        // above (its live value comes from ConfigurationManager, e.g. the
+        // CONFIG_USE_TEST_SERIAL_NUMBER Kconfig fallback), but was never actually
+        // created here, so reading it always returned UNSUPPORTED_ATTRIBUTE.
+        attribute::create_serial_number(cluster, NULL, 0);
 
         /* Attributes not managed internally */
         global::attribute::create_cluster_revision(cluster, cluster_revision);
